@@ -6,4 +6,5 @@ export const storageKeys = {
   scanHistory: 'scan_history',
   personalization: 'personalization',
   favorites: 'favorites',
+  modelPreset: 'model_preset',
 } as const;

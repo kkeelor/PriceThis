@@ -3,18 +3,20 @@ import { StyleSheet, TextInput, View } from 'react-native';
 
 import { ScanningOverlay } from '@/components/ui/ScanningOverlay';
 import { AppText, Button } from '@/components/ui/Button';
+import { GlassCard } from '@/components/ui/GlassCard';
 import { Screen } from '@/components/ui/Screen';
 import { useScan } from '@/hooks/useScan';
 import type { SearchScreenProps } from '@/navigation/types';
-import { colors, spacing, typography } from '@/theme';
+import { colors, radii, spacing, typography } from '@/theme';
 
 export function SearchScreen({ navigation, route }: SearchScreenProps) {
   const [query, setQuery] = useState(route.params?.initialQuery ?? '');
 
-  const { isScanning, runTextScan } = useScan({
+  const { isScanning, error, clearError, runTextScan } = useScan({
     onSuccess: result => {
       navigation.replace('Result', { result });
     },
+    showErrorAlert: false,
   });
 
   const handleSearch = useCallback(() => {
@@ -22,8 +24,9 @@ export function SearchScreen({ navigation, route }: SearchScreenProps) {
     if (trimmed.length === 0) {
       return;
     }
+    clearError();
     void runTextScan(trimmed);
-  }, [query, runTextScan]);
+  }, [clearError, query, runTextScan]);
 
   return (
     <Screen>
@@ -45,6 +48,19 @@ export function SearchScreen({ navigation, route }: SearchScreenProps) {
         returnKeyType="search"
         onSubmitEditing={handleSearch}
       />
+
+      {error ? (
+        <GlassCard style={styles.errorCard}>
+          <AppText style={styles.errorTitle}>Couldn't find a value</AppText>
+          <AppText style={styles.errorBody}>{error}</AppText>
+          <Button
+            label="Try again"
+            variant="secondary"
+            onPress={handleSearch}
+            disabled={isScanning || query.trim().length === 0}
+          />
+        </GlassCard>
+      ) : null}
 
       <Button
         label={isScanning ? 'Searching…' : 'Find value'}
@@ -72,9 +88,22 @@ const styles = StyleSheet.create({
     backgroundColor: colors.surface,
     borderWidth: 1,
     borderColor: colors.border,
-    borderRadius: 16,
+    borderRadius: radii.md,
     paddingHorizontal: spacing.md,
     paddingVertical: spacing.md,
     marginBottom: spacing.lg,
+  },
+  errorCard: {
+    gap: spacing.sm,
+    marginBottom: spacing.lg,
+    borderColor: 'rgba(248, 113, 113, 0.35)',
+  },
+  errorTitle: {
+    ...typography.bodyStrong,
+    color: colors.danger,
+  },
+  errorBody: {
+    ...typography.body,
+    color: colors.textSecondary,
   },
 });

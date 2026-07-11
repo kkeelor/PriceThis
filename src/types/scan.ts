@@ -53,6 +53,8 @@ export type ScanResult = {
   category: ScanCategory;
   source: 'camera' | 'gallery' | 'search' | 'share';
   createdAt: number;
+  modelPreset?: string;
+  modelId?: string;
 };
 
 export type PersonalizationProfile = {

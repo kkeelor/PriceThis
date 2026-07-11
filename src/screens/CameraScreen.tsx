@@ -8,6 +8,7 @@ import {
   usePhotoOutput,
 } from 'react-native-vision-camera';
 
+import { CameraViewfinder } from '@/components/camera/CameraViewfinder';
 import { ScanningOverlay } from '@/components/ui/ScanningOverlay';
 import { AppText, Button } from '@/components/ui/Button';
 import { Screen } from '@/components/ui/Screen';
@@ -51,8 +52,12 @@ export function CameraScreen({ navigation }: CameraScreenProps) {
       const photo = await photoOutput.capturePhoto({}, {});
       const fileData = await photo.getFileDataAsync();
       const imageBase64 = arrayBufferToBase64(fileData);
+      const tempPath = await photo.saveToTemporaryFileAsync();
       photo.dispose();
-      await runImageScan(imageBase64);
+      await runImageScan(imageBase64, {
+        heroImageUri: `file://${tempPath}`,
+        source: 'camera',
+      });
     } catch (captureError) {
       const message =
         captureError instanceof Error ? captureError.message : 'Could not capture photo';
@@ -78,7 +83,7 @@ export function CameraScreen({ navigation }: CameraScreenProps) {
     return (
       <Screen>
         <View style={styles.centered}>
-          <ActivityIndicator color={colors.accent} />
+          <ActivityIndicator color={colors.accent} size="large" />
           <AppText style={styles.message}>Starting camera…</AppText>
         </View>
       </Screen>
@@ -97,6 +102,8 @@ export function CameraScreen({ navigation }: CameraScreenProps) {
         onPreviewStarted={() => setIsReady(true)}
       />
 
+      <CameraViewfinder />
+
       <View style={styles.overlay}>
         <View style={styles.topBar}>
           <Button label="Close" variant="ghost" onPress={handleClose} />
@@ -112,6 +119,11 @@ export function CameraScreen({ navigation }: CameraScreenProps) {
             label={isScanning ? 'Scanning…' : 'Tap to Scan'}
             disabled={!isReady || isScanning}
             onPress={() => void handleScan()}
+          />
+          <Button
+            label="Search instead"
+            variant="ghost"
+            onPress={() => navigation.navigate('Search')}
           />
         </View>
       </View>

@@ -44,14 +44,20 @@ function toScanResult(
     category: toCategory(response.category),
     source,
     createdAt: Date.now(),
+    modelPreset: response.meta?.preset,
+    modelId: response.meta?.modelId,
   };
 }
 
-export async function scanByText(query: string): Promise<ScanResult> {
+export async function scanByText(
+  query: string,
+  model?: string,
+): Promise<ScanResult> {
   const response = await apiClient.scanText({
     query,
     locale: getDeviceLocale(),
     currencyCode: getDeviceCurrencyCode(),
+    model,
   });
 
   return toScanResult(response, 'search');
@@ -59,13 +65,22 @@ export async function scanByText(query: string): Promise<ScanResult> {
 
 export async function scanByImage(
   imageBase64: string,
-  heroImageUri?: string,
+  options?: {
+    heroImageUri?: string;
+    source?: ScanResult['source'];
+    model?: string;
+  },
 ): Promise<ScanResult> {
   const response = await apiClient.scanImage({
     imageBase64,
     locale: getDeviceLocale(),
     currencyCode: getDeviceCurrencyCode(),
+    model: options?.model,
   });
 
-  return toScanResult(response, 'camera', heroImageUri);
+  return toScanResult(
+    response,
+    options?.source ?? 'camera',
+    options?.heroImageUri,
+  );
 }

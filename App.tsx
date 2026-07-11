@@ -3,6 +3,7 @@ import { ActivityIndicator, StatusBar, StyleSheet, Text, View } from 'react-nati
 import { GestureHandlerRootView } from 'react-native-gesture-handler';
 import { SafeAreaProvider } from 'react-native-safe-area-context';
 
+import { ModelPresetProvider } from '@/context/ModelPresetContext';
 import { RootNavigator } from '@/navigation/RootNavigator';
 import { colors, typography } from '@/theme';
 
@@ -18,7 +19,9 @@ export default function App() {
       <SafeAreaProvider>
         <StatusBar barStyle="light-content" backgroundColor={colors.background} />
         {isReady ? (
-          <RootNavigator />
+          <ModelPresetProvider>
+            <RootNavigator />
+          </ModelPresetProvider>
         ) : (
           <View style={styles.loading}>
             <Text style={styles.loadingTitle}>PriceThis</Text>
