@@ -1,0 +1,21 @@
+{
+  "name": "pricethis-api",
+  "private": true,
+  "version": "0.0.1",
+  "type": "module",
+  "scripts": {
+    "dev": "tsx --env-file=.env dev-server.ts",
+    "dev:vercel": "vercel dev",
+    "typecheck": "tsc --noEmit"
+  },
+  "dependencies": {
+    "@anthropic-ai/sdk": "^0.71.2"
+  },
+  "devDependencies": {
+    "@types/node": "^22.13.10",
+    "@vercel/node": "^5.1.14",
+    "tsx": "^4.23.0",
+    "typescript": "^5.8.3",
+    "vercel": "^41.4.0"
+  }
+}
