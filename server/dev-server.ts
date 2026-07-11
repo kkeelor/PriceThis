@@ -1,8 +1,10 @@
 import http from 'node:http';
 
 import { scanImageWithClaude, scanTextWithClaude } from './lib/claude.js';
+import { listConfiguredModels } from './lib/models.js';
 import { getMarketContextForImageLabel } from './lib/market-data.js';
 import { getMarketContextForQuery } from './lib/market-data.js';
+import { getRequestedModel, withModelMeta } from './lib/request-model.js';
 import type { ScanImageRequest, ScanTextRequest } from './lib/types.js';
 
 const PORT = Number(process.env.PORT ?? 3000);
@@ -12,7 +14,7 @@ function sendJson(res: http.ServerResponse, status: number, body: unknown) {
     'Content-Type': 'application/json',
     'Access-Control-Allow-Origin': '*',
     'Access-Control-Allow-Methods': 'GET, POST, OPTIONS',
-    'Access-Control-Allow-Headers': 'Content-Type',
+    'Access-Control-Allow-Headers': 'Content-Type, X-Claude-Model',
   });
   res.end(JSON.stringify(body));
 }
@@ -38,6 +40,14 @@ const server = http.createServer(async (req, res) => {
     return sendJson(res, 200, {
       ok: true,
       claudeConfigured: Boolean(process.env.ANTHROPIC_API_KEY),
+      models: listConfiguredModels(),
+    });
+  }
+
+  if (req.method === 'GET' && req.url === '/api/models') {
+    return sendJson(res, 200, {
+      defaultPreset: 'default',
+      models: listConfiguredModels(),
     });
   }
 
@@ -48,15 +58,17 @@ const server = http.createServer(async (req, res) => {
         return sendJson(res, 400, { error: 'query, locale, and currencyCode are required' });
       }
 
+      const requestedModel = getRequestedModel(req, body);
       const marketContext = await getMarketContextForQuery(body.query);
       const result = await scanTextWithClaude({
         query: body.query.trim(),
         locale: body.locale,
         currencyCode: body.currencyCode,
         marketContext,
+        model: requestedModel,
       });
 
-      return sendJson(res, 200, result);
+      return sendJson(res, 200, withModelMeta(result, requestedModel));
     } catch (error) {
       const message = error instanceof Error ? error.message : 'Scan failed';
       return sendJson(res, 500, { error: message });
@@ -72,15 +84,17 @@ const server = http.createServer(async (req, res) => {
         });
       }
 
+      const requestedModel = getRequestedModel(req, body);
       const marketContext = await getMarketContextForImageLabel();
       const result = await scanImageWithClaude({
         imageBase64: body.imageBase64,
         locale: body.locale,
         currencyCode: body.currencyCode,
         marketContext,
+        model: requestedModel,
       });
 
-      return sendJson(res, 200, result);
+      return sendJson(res, 200, withModelMeta(result, requestedModel));
     } catch (error) {
       const message = error instanceof Error ? error.message : 'Scan failed';
       return sendJson(res, 500, { error: message });

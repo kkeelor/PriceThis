@@ -1,8 +1,7 @@
 import Anthropic from '@anthropic-ai/sdk';
 
+import { resolveModel } from './models.js';
 import type { ScanApiResponse } from './types.js';
-
-const MODEL = process.env.CLAUDE_MODEL ?? 'claude-sonnet-4-6';
 
 function getClient(): Anthropic {
   const apiKey = process.env.ANTHROPIC_API_KEY;
@@ -67,14 +66,16 @@ export async function scanImageWithClaude(params: {
   locale: string;
   currencyCode: string;
   marketContext?: string;
+  model?: string;
 }): Promise<ScanApiResponse> {
   const client = getClient();
+  const { id: modelId } = resolveModel(params.model);
   const userText = params.marketContext
     ? `Identify this object and estimate value. Market context:\n${params.marketContext}`
     : 'Identify this object and estimate its market value.';
 
   const response = await client.messages.create({
-    model: MODEL,
+    model: modelId,
     max_tokens: 1800,
     system: buildSystemPrompt(params.currencyCode, params.locale),
     messages: [
@@ -108,14 +109,16 @@ export async function scanTextWithClaude(params: {
   locale: string;
   currencyCode: string;
   marketContext?: string;
+  model?: string;
 }): Promise<ScanApiResponse> {
   const client = getClient();
+  const { id: modelId } = resolveModel(params.model);
   const userText = params.marketContext
     ? `Object query: ${params.query}\nMarket context:\n${params.marketContext}`
     : `Object query: ${params.query}`;
 
   const response = await client.messages.create({
-    model: MODEL,
+    model: modelId,
     max_tokens: 1800,
     system: buildSystemPrompt(params.currencyCode, params.locale),
     messages: [{ role: 'user', content: userText }],
