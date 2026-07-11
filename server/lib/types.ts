@@ -11,6 +11,14 @@ export type CuriosityCard = {
   content: string;
 };
 
+export type ProductListing = {
+  id: string;
+  retailer: string;
+  title: string;
+  url: string;
+  referralNetwork?: 'rakuten' | 'indeals' | null;
+};
+
 export type ScanApiResponse = {
   objectName: string;
   estimatedValue: number;
@@ -21,6 +29,7 @@ export type ScanApiResponse = {
   explanation: RecognitionExplanation;
   curiosityCards: CuriosityCard[];
   category: string;
+  listings: ProductListing[];
 };
 
 export type ScanImageRequest = {

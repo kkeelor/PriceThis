@@ -1,6 +1,7 @@
 import type { ScanApiResponse } from '@/types/api';
 import type { ScanCategory, ScanResult } from '@/types/scan';
 import { apiClient } from '@/services/api/client';
+import { resolveListings } from '@/services/listings/buildListings';
 import {
   getDeviceCurrencyCode,
   getDeviceLocale,
@@ -41,6 +42,7 @@ function toScanResult(
     alternativeMatches: response.alternativeMatches,
     explanation: response.explanation,
     curiosityCards: response.curiosityCards,
+    listings: resolveListings(response.objectName, response.listings),
     category: toCategory(response.category),
     source,
     createdAt: Date.now(),

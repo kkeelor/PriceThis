@@ -1,53 +1,59 @@
-import { useCallback, useRef } from 'react';
+import { useCallback, useState } from 'react';
 import {
   Image,
-  LayoutChangeEvent,
   ScrollView,
   StyleSheet,
   View,
 } from 'react-native';
 import Share from 'react-native-share';
 
+import { AccuracyFeedback } from '@/components/result/AccuracyFeedback';
 import { AlternativeMatches } from '@/components/result/AlternativeMatches';
 import { CuriosityCardItem } from '@/components/result/CuriosityCardItem';
+import { ProductListings } from '@/components/result/ProductListings';
 import { AppText, Button } from '@/components/ui/Button';
 import {
   ConfidenceBadge,
-  isLowConfidence,
 } from '@/components/ui/ConfidenceBadge';
 import { GlassCard } from '@/components/ui/GlassCard';
 import { Screen } from '@/components/ui/Screen';
+import { useTheme } from '@/context/ThemeContext';
 import type { ResultScreenProps } from '@/navigation/types';
 import { formatCurrency } from '@/services/locale/currency';
-import { colors, spacing, typography } from '@/theme';
+import { resolveListings } from '@/services/listings/buildListings';
+import { updateScanAccuracy } from '@/services/storage/scanHistory';
+import type { UserAccuracy } from '@/types/scan';
+import { spacing, typography } from '@/theme';
+import type { ThemeColors } from '@/theme/types';
 
 export function ResultScreen({ navigation, route }: ResultScreenProps) {
-  const { result } = route.params;
-  const scrollRef = useRef<ScrollView>(null);
-  const cardsOffset = useRef(0);
+  const { colors } = useTheme();
+  const styles = createStyles(colors);
+  const { result: initialResult } = route.params;
+  const [userAccuracy, setUserAccuracy] = useState<UserAccuracy | undefined>(
+    initialResult.userAccuracy,
+  );
 
-  const handleExplore = useCallback(() => {
-    scrollRef.current?.scrollTo({ y: cardsOffset.current, animated: true });
-  }, []);
+  const listings = resolveListings(initialResult.objectName, initialResult.listings);
 
   const handleShare = useCallback(async () => {
     const message = [
-      result.objectName,
-      `Worth about ${formatCurrency(result.estimatedValue, result.currencyCode)}`,
-      `${result.confidence}% confidence`,
+      initialResult.objectName,
+      `Worth about ${formatCurrency(initialResult.estimatedValue, initialResult.currencyCode)}`,
+      `${initialResult.confidence}% confidence`,
       '',
-      result.wowInsight,
+      initialResult.wowInsight,
     ].join('\n');
 
     try {
       await Share.open({
         message,
-        title: result.objectName,
+        title: initialResult.objectName,
       });
     } catch {
       // user dismissed share sheet
     }
-  }, [result]);
+  }, [initialResult]);
 
   const handleAlternativeSelect = useCallback(
     (name: string) => {
@@ -56,16 +62,17 @@ export function ResultScreen({ navigation, route }: ResultScreenProps) {
     [navigation],
   );
 
-  const onCardsLayout = useCallback((event: LayoutChangeEvent) => {
-    cardsOffset.current = event.nativeEvent.layout.y;
-  }, []);
-
-  const lowConfidence = isLowConfidence(result.confidence);
+  const handleAccuracyChange = useCallback(
+    (accuracy: UserAccuracy) => {
+      setUserAccuracy(accuracy);
+      updateScanAccuracy(initialResult.id, accuracy);
+    },
+    [initialResult.id],
+  );
 
   return (
     <Screen padded={false}>
       <ScrollView
-        ref={scrollRef}
         contentContainerStyle={styles.scroll}
         showsVerticalScrollIndicator={false}>
         <View style={styles.header}>
@@ -73,8 +80,8 @@ export function ResultScreen({ navigation, route }: ResultScreenProps) {
           <Button label="Share" variant="ghost" onPress={() => void handleShare()} />
         </View>
 
-        {result.heroImageUri ? (
-          <Image source={{ uri: result.heroImageUri }} style={styles.hero} />
+        {initialResult.heroImageUri ? (
+          <Image source={{ uri: initialResult.heroImageUri }} style={styles.hero} />
         ) : (
           <View style={styles.heroPlaceholder}>
             <AppText style={styles.heroPlaceholderText}>✨</AppText>
@@ -82,50 +89,39 @@ export function ResultScreen({ navigation, route }: ResultScreenProps) {
         )}
 
         <View style={styles.body}>
-          <AppText style={styles.appears}>This appears to be</AppText>
-          <AppText style={styles.objectName}>{result.objectName}</AppText>
-
-          {result.modelId ? (
-            <AppText style={styles.modelMeta}>
-              Model: {result.modelPreset ?? 'custom'} · {result.modelId}
+          <View style={styles.summary}>
+            <AppText style={styles.appears}>This appears to be</AppText>
+            <AppText style={styles.objectName} numberOfLines={3}>
+              {initialResult.objectName}
             </AppText>
-          ) : null}
 
-          <GlassCard style={styles.valueCard}>
-            <AppText style={styles.valueLabel}>Worth about</AppText>
-            <AppText style={styles.value}>
-              {formatCurrency(result.estimatedValue, result.currencyCode)}
-            </AppText>
-            <ConfidenceBadge confidence={result.confidence} />
-          </GlassCard>
+            <View style={styles.valueRow}>
+              <View style={styles.valueBlock}>
+                <AppText style={styles.valueLabel}>Worth about</AppText>
+                <AppText style={styles.value} numberOfLines={1} adjustsFontSizeToFit minimumFontScale={0.7}>
+                  {formatCurrency(initialResult.estimatedValue, initialResult.currencyCode)}
+                </AppText>
+              </View>
+              <ConfidenceBadge confidence={initialResult.confidence} />
+            </View>
+          </View>
 
-          {lowConfidence ? (
-            <GlassCard style={styles.warningCard}>
-              <AppText style={styles.warningTitle}>We're not fully sure</AppText>
-              <AppText style={styles.warningBody}>
-                Try a clearer photo, or tap an alternative match below to search
-                again.
-              </AppText>
-              <Button
-                label="Search manually"
-                variant="secondary"
-                onPress={() =>
-                  navigation.navigate('Search', { initialQuery: result.objectName })
-                }
-              />
-            </GlassCard>
-          ) : null}
+          <AccuracyFeedback value={userAccuracy} onChange={handleAccuracyChange} />
+
+          <ProductListings listings={listings} />
+
+          <View style={styles.divider} />
 
           <GlassCard>
             <AppText style={styles.insightLabel}>Did you know?</AppText>
-            <AppText style={styles.insight}>{result.wowInsight}</AppText>
+            <AppText style={styles.insight}>{initialResult.wowInsight}</AppText>
           </GlassCard>
 
-          {result.explanation.summary ? (
+          {initialResult.explanation.summary ? (
             <GlassCard>
               <AppText style={styles.sectionLabel}>Why we think so</AppText>
-              <AppText style={styles.summary}>{result.explanation.summary}</AppText>
-              {result.explanation.features.map(feature => (
+              <AppText style={styles.explanationSummary}>{initialResult.explanation.summary}</AppText>
+              {initialResult.explanation.features.map(feature => (
                 <AppText key={feature} style={styles.feature}>
                   • {feature}
                 </AppText>
@@ -134,132 +130,128 @@ export function ResultScreen({ navigation, route }: ResultScreenProps) {
           ) : null}
 
           <AlternativeMatches
-            matches={result.alternativeMatches}
+            matches={initialResult.alternativeMatches}
             onSelect={handleAlternativeSelect}
           />
 
-          <View onLayout={onCardsLayout} style={styles.cardsSection}>
+          <View style={styles.cardsSection}>
             <AppText style={styles.sectionLabel}>Explore deeper</AppText>
-            {result.curiosityCards.map(card => (
+            {initialResult.curiosityCards.map(card => (
               <CuriosityCardItem key={card.id} card={card} />
             ))}
           </View>
 
-          <View style={styles.actions}>
-            <Button label="Explore" fullWidth onPress={handleExplore} />
-            <Button
-              label="Scan something else"
-              variant="secondary"
-              fullWidth
-              onPress={() => navigation.navigate('Camera')}
-            />
-          </View>
+          <Button
+            label="Scan something else"
+            variant="secondary"
+            fullWidth
+            onPress={() => navigation.navigate('Camera')}
+          />
         </View>
       </ScrollView>
     </Screen>
   );
 }
 
-const styles = StyleSheet.create({
-  scroll: {
-    paddingBottom: spacing.xxl,
-  },
-  header: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    paddingHorizontal: spacing.lg,
-    paddingTop: spacing.md,
-    marginBottom: spacing.md,
-  },
-  hero: {
-    width: '100%',
-    height: 280,
-    backgroundColor: colors.surface,
-  },
-  heroPlaceholder: {
-    width: '100%',
-    height: 220,
-    backgroundColor: colors.surfaceElevated,
-    alignItems: 'center',
-    justifyContent: 'center',
-  },
-  heroPlaceholderText: {
-    fontSize: 56,
-  },
-  body: {
-    paddingHorizontal: spacing.lg,
-    paddingTop: spacing.lg,
-    gap: spacing.lg,
-  },
-  appears: {
-    ...typography.caption,
-    color: colors.textMuted,
-    textTransform: 'uppercase',
-    letterSpacing: 1,
-  },
-  objectName: {
-    ...typography.title,
-    color: colors.textPrimary,
-    marginTop: -spacing.sm,
-  },
-  modelMeta: {
-    ...typography.caption,
-    color: colors.textMuted,
-    marginTop: -spacing.sm,
-  },
-  valueCard: {
-    gap: spacing.sm,
-  },
-  valueLabel: {
-    ...typography.caption,
-    color: colors.textMuted,
-  },
-  value: {
-    ...typography.hero,
-    color: colors.textPrimary,
-    fontSize: 36,
-    lineHeight: 40,
-  },
-  warningCard: {
-    gap: spacing.sm,
-    borderColor: 'rgba(251, 191, 36, 0.35)',
-  },
-  warningTitle: {
-    ...typography.bodyStrong,
-    color: colors.warning,
-  },
-  warningBody: {
-    ...typography.body,
-    color: colors.textSecondary,
-  },
-  insightLabel: {
-    ...typography.label,
-    color: colors.accent,
-    marginBottom: spacing.xs,
-  },
-  insight: {
-    ...typography.headline,
-    color: colors.textPrimary,
-  },
-  sectionLabel: {
-    ...typography.label,
-    color: colors.textMuted,
-    marginBottom: spacing.xs,
-  },
-  summary: {
-    ...typography.body,
-    color: colors.textPrimary,
-    marginBottom: spacing.sm,
-  },
-  feature: {
-    ...typography.body,
-    color: colors.textSecondary,
-  },
-  cardsSection: {
-    gap: spacing.md,
-  },
-  actions: {
-    gap: spacing.md,
-    marginTop: spacing.sm,
-  },
-});
+function createStyles(colors: ThemeColors) {
+  return StyleSheet.create({
+    scroll: {
+      paddingBottom: spacing.xxl,
+    },
+    header: {
+      flexDirection: 'row',
+      justifyContent: 'space-between',
+      paddingHorizontal: spacing.lg,
+      paddingTop: spacing.md,
+      marginBottom: spacing.sm,
+    },
+    hero: {
+      width: '100%',
+      height: 140,
+      backgroundColor: colors.surface,
+    },
+    heroPlaceholder: {
+      width: '100%',
+      height: 120,
+      backgroundColor: colors.surfaceElevated,
+      alignItems: 'center',
+      justifyContent: 'center',
+    },
+    heroPlaceholderText: {
+      fontSize: 40,
+    },
+    body: {
+      paddingHorizontal: spacing.lg,
+      paddingTop: spacing.lg,
+      gap: spacing.lg,
+    },
+    summary: {
+      gap: spacing.xs,
+    },
+    appears: {
+      ...typography.caption,
+      color: colors.textMuted,
+      textTransform: 'uppercase',
+      letterSpacing: 1,
+    },
+    objectName: {
+      ...typography.title,
+      color: colors.textPrimary,
+      flexShrink: 1,
+    },
+    valueRow: {
+      flexDirection: 'row',
+      alignItems: 'flex-end',
+      justifyContent: 'space-between',
+      gap: spacing.md,
+      marginTop: spacing.sm,
+      flexWrap: 'wrap',
+    },
+    valueBlock: {
+      flex: 1,
+      gap: 2,
+      minWidth: 0,
+    },
+    valueLabel: {
+      ...typography.caption,
+      color: colors.textMuted,
+    },
+    value: {
+      ...typography.hero,
+      color: colors.textPrimary,
+      fontSize: 34,
+      lineHeight: 38,
+    },
+    divider: {
+      height: StyleSheet.hairlineWidth,
+      backgroundColor: colors.border,
+      marginVertical: spacing.xs,
+    },
+    insightLabel: {
+      ...typography.label,
+      color: colors.accent,
+      marginBottom: spacing.xs,
+    },
+    insight: {
+      ...typography.headline,
+      color: colors.textPrimary,
+    },
+    sectionLabel: {
+      ...typography.label,
+      color: colors.textMuted,
+      marginBottom: spacing.xs,
+    },
+    explanationSummary: {
+      ...typography.body,
+      color: colors.textPrimary,
+      marginBottom: spacing.sm,
+    },
+    feature: {
+      ...typography.body,
+      color: colors.textSecondary,
+    },
+    cardsSection: {
+      gap: spacing.md,
+    },
+  });
+}

@@ -1,4 +1,5 @@
 import type { ScanResult } from '@/types/scan';
+import { deleteAllScanImages, deleteScanImage } from '@/services/storage/scanImages';
 import { storage, storageKeys } from '@/services/storage/mmkv';
 
 const MAX_HISTORY = 20;
@@ -28,4 +29,32 @@ export function saveScanResult(result: ScanResult): void {
 
 export function getScanById(id: string): ScanResult | undefined {
   return readHistory().find(item => item.id === id);
+}
+
+function writeHistory(history: ScanResult[]): void {
+  if (history.length === 0) {
+    storage.remove(storageKeys.scanHistory);
+    return;
+  }
+  storage.set(storageKeys.scanHistory, JSON.stringify(history));
+}
+
+export function deleteScanById(id: string): void {
+  writeHistory(readHistory().filter(item => item.id !== id));
+  void deleteScanImage(id);
+}
+
+export function updateScanAccuracy(
+  id: string,
+  userAccuracy: ScanResult['userAccuracy'],
+): void {
+  const history = readHistory().map(item =>
+    item.id === id ? { ...item, userAccuracy } : item,
+  );
+  writeHistory(history);
+}
+
+export function clearAllScans(): void {
+  writeHistory([]);
+  void deleteAllScanImages();
 }

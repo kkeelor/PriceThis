@@ -10,7 +10,9 @@ import Animated, {
 } from 'react-native-reanimated';
 
 import { AppText } from '@/components/ui/Button';
-import { colors, radii, spacing, typography } from '@/theme';
+import { useTheme } from '@/context/ThemeContext';
+import { radii, spacing, typography } from '@/theme';
+import type { ThemeColors } from '@/theme/types';
 
 type ScanningOverlayProps = {
   visible: boolean;
@@ -21,6 +23,8 @@ export function ScanningOverlay({
   visible,
   message = 'Analyzing…',
 }: ScanningOverlayProps) {
+  const { colors } = useTheme();
+  const styles = createStyles(colors);
   const scale = useSharedValue(1);
   const opacity = useSharedValue(0.5);
 
@@ -68,52 +72,54 @@ export function ScanningOverlay({
   );
 }
 
-const styles = StyleSheet.create({
-  backdrop: {
-    flex: 1,
-    backgroundColor: colors.overlay,
-    alignItems: 'center',
-    justifyContent: 'center',
-    padding: spacing.lg,
-  },
-  card: {
-    backgroundColor: colors.surfaceElevated,
-    borderRadius: radii.xl,
-    padding: spacing.xl,
-    alignItems: 'center',
-    gap: spacing.md,
-    minWidth: 240,
-    borderWidth: 1,
-    borderColor: colors.border,
-  },
-  ringContainer: {
-    width: 72,
-    height: 72,
-    alignItems: 'center',
-    justifyContent: 'center',
-  },
-  ring: {
-    position: 'absolute',
-    width: 72,
-    height: 72,
-    borderRadius: 36,
-    borderWidth: 3,
-    borderColor: colors.accent,
-  },
-  core: {
-    width: 16,
-    height: 16,
-    borderRadius: 8,
-    backgroundColor: colors.accent,
-  },
-  message: {
-    ...typography.bodyStrong,
-    color: colors.textPrimary,
-    textAlign: 'center',
-  },
-  subtitle: {
-    ...typography.caption,
-    color: colors.textSecondary,
-    textAlign: 'center',
-  },
-});
+function createStyles(colors: ThemeColors) {
+  return StyleSheet.create({
+    backdrop: {
+      flex: 1,
+      backgroundColor: colors.overlay,
+      alignItems: 'center',
+      justifyContent: 'center',
+      padding: spacing.lg,
+    },
+    card: {
+      backgroundColor: colors.surfaceElevated,
+      borderRadius: radii.xl,
+      padding: spacing.xl,
+      alignItems: 'center',
+      gap: spacing.md,
+      minWidth: 240,
+      borderWidth: 1,
+      borderColor: colors.border,
+    },
+    ringContainer: {
+      width: 72,
+      height: 72,
+      alignItems: 'center',
+      justifyContent: 'center',
+    },
+    ring: {
+      position: 'absolute',
+      width: 72,
+      height: 72,
+      borderRadius: 36,
+      borderWidth: 3,
+      borderColor: colors.accent,
+    },
+    core: {
+      width: 16,
+      height: 16,
+      borderRadius: 8,
+      backgroundColor: colors.accent,
+    },
+    message: {
+      ...typography.bodyStrong,
+      color: colors.textPrimary,
+      textAlign: 'center',
+    },
+    subtitle: {
+      ...typography.caption,
+      color: colors.textSecondary,
+      textAlign: 'center',
+    },
+  });
+}

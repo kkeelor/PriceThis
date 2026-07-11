@@ -1,4 +1,5 @@
 import type { CuriosityCard, RecognitionExplanation, ScanCategory } from './scan';
+import type { ProductListing } from './scan';
 
 export type ScanImageRequest = {
   imageBase64: string;
@@ -24,6 +25,7 @@ export type ScanApiResponse = {
   explanation: RecognitionExplanation;
   curiosityCards: CuriosityCard[];
   category: ScanCategory;
+  listings?: ProductListing[];
   meta?: {
     modelId: string;
     preset?: string;

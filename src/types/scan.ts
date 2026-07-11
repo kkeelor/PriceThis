@@ -39,6 +39,18 @@ export type CuriosityCard = {
   content: string;
 };
 
+export type ReferralNetwork = 'rakuten' | 'indeals';
+
+export type ProductListing = {
+  id: string;
+  retailer: string;
+  title: string;
+  url: string;
+  referralNetwork?: ReferralNetwork | null;
+};
+
+export type UserAccuracy = 'correct' | 'incorrect';
+
 export type ScanResult = {
   id: string;
   objectName: string;
@@ -50,6 +62,8 @@ export type ScanResult = {
   alternativeMatches: RecognitionMatch[];
   explanation: RecognitionExplanation;
   curiosityCards: CuriosityCard[];
+  listings?: ProductListing[];
+  userAccuracy?: UserAccuracy;
   category: ScanCategory;
   source: 'camera' | 'gallery' | 'search' | 'share';
   createdAt: number;

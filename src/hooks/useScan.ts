@@ -4,6 +4,7 @@ import { Alert } from 'react-native';
 import { useModelPreset } from '@/context/ModelPresetContext';
 import { scanByImage, scanByText } from '@/services/scan/scanService';
 import { saveScanResult } from '@/services/storage/scanHistory';
+import { persistHeroImage } from '@/services/storage/scanImages';
 import type { ScanResult } from '@/types/scan';
 import { getErrorMessage } from '@/utils/errorMessage';
 
@@ -18,9 +19,16 @@ export function useScan({ onSuccess, showErrorAlert = true }: UseScanOptions) {
   const [error, setError] = useState<string | null>(null);
 
   const handleSuccess = useCallback(
-    (result: ScanResult) => {
-      saveScanResult(result);
-      onSuccess(result);
+    async (result: ScanResult) => {
+      let toSave = result;
+      if (result.heroImageUri) {
+        const persistedUri = await persistHeroImage(result.id, result.heroImageUri);
+        if (persistedUri) {
+          toSave = { ...result, heroImageUri: persistedUri };
+        }
+      }
+      saveScanResult(toSave);
+      onSuccess(toSave);
     },
     [onSuccess],
   );
@@ -31,7 +39,7 @@ export function useScan({ onSuccess, showErrorAlert = true }: UseScanOptions) {
       setError(null);
       try {
         const result = await scanByText(query, preset);
-        handleSuccess(result);
+        await handleSuccess(result);
       } catch (scanError) {
         const message = getErrorMessage(scanError, 'Scan failed');
         setError(message);
@@ -60,7 +68,7 @@ export function useScan({ onSuccess, showErrorAlert = true }: UseScanOptions) {
           ...options,
           model: preset,
         });
-        handleSuccess(result);
+        await handleSuccess(result);
       } catch (scanError) {
         const message = getErrorMessage(scanError, 'Scan failed');
         setError(message);

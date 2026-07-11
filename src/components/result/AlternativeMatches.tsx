@@ -1,8 +1,10 @@
 import { Pressable, StyleSheet, View } from 'react-native';
 
 import { AppText } from '@/components/ui/Button';
+import { useTheme } from '@/context/ThemeContext';
 import type { RecognitionMatch } from '@/types/scan';
-import { colors, radii, spacing, typography } from '@/theme';
+import { radii, spacing, typography } from '@/theme';
+import type { ThemeColors } from '@/theme/types';
 
 type AlternativeMatchesProps = {
   matches: RecognitionMatch[];
@@ -10,6 +12,9 @@ type AlternativeMatchesProps = {
 };
 
 export function AlternativeMatches({ matches, onSelect }: AlternativeMatchesProps) {
+  const { colors } = useTheme();
+  const styles = createStyles(colors);
+
   if (matches.length === 0) {
     return null;
   }
@@ -32,34 +37,36 @@ export function AlternativeMatches({ matches, onSelect }: AlternativeMatchesProp
   );
 }
 
-const styles = StyleSheet.create({
-  container: {
-    gap: spacing.sm,
-  },
-  label: {
-    ...typography.label,
-    color: colors.textMuted,
-  },
-  row: {
-    flexDirection: 'row',
-    flexWrap: 'wrap',
-    gap: spacing.sm,
-  },
-  chip: {
-    backgroundColor: colors.surface,
-    borderWidth: 1,
-    borderColor: colors.border,
-    borderRadius: radii.pill,
-    paddingHorizontal: spacing.md,
-    paddingVertical: spacing.sm,
-    gap: 2,
-  },
-  chipText: {
-    ...typography.caption,
-    color: colors.textPrimary,
-  },
-  chipMeta: {
-    ...typography.caption,
-    color: colors.textMuted,
-  },
-});
+function createStyles(colors: ThemeColors) {
+  return StyleSheet.create({
+    container: {
+      gap: spacing.sm,
+    },
+    label: {
+      ...typography.label,
+      color: colors.textMuted,
+    },
+    row: {
+      flexDirection: 'row',
+      flexWrap: 'wrap',
+      gap: spacing.sm,
+    },
+    chip: {
+      backgroundColor: colors.surface,
+      borderWidth: 1,
+      borderColor: colors.border,
+      borderRadius: radii.pill,
+      paddingHorizontal: spacing.md,
+      paddingVertical: spacing.sm,
+      gap: 2,
+    },
+    chipText: {
+      ...typography.caption,
+      color: colors.textPrimary,
+    },
+    chipMeta: {
+      ...typography.caption,
+      color: colors.textMuted,
+    },
+  });
+}

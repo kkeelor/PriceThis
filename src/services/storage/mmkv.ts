@@ -7,4 +7,5 @@ export const storageKeys = {
   personalization: 'personalization',
   favorites: 'favorites',
   modelPreset: 'model_preset',
+  theme: 'app_theme',
 } as const;

@@ -12,12 +12,16 @@ import { CameraViewfinder } from '@/components/camera/CameraViewfinder';
 import { ScanningOverlay } from '@/components/ui/ScanningOverlay';
 import { AppText, Button } from '@/components/ui/Button';
 import { Screen } from '@/components/ui/Screen';
+import { useTheme } from '@/context/ThemeContext';
 import { useScan } from '@/hooks/useScan';
 import type { CameraScreenProps } from '@/navigation/types';
-import { colors, spacing, typography } from '@/theme';
+import { spacing, typography } from '@/theme';
+import type { ThemeColors } from '@/theme/types';
 import { arrayBufferToBase64 } from '@/utils/base64';
 
 export function CameraScreen({ navigation }: CameraScreenProps) {
+  const { colors } = useTheme();
+  const styles = createStyles(colors);
   const device = useCameraDevice('back');
   const photoOutput = usePhotoOutput({
     targetResolution: CommonResolutions.HD_16_9,
@@ -131,40 +135,42 @@ export function CameraScreen({ navigation }: CameraScreenProps) {
   );
 }
 
-const styles = StyleSheet.create({
-  container: {
-    flex: 1,
-    backgroundColor: colors.background,
-  },
-  overlay: {
-    ...StyleSheet.absoluteFill,
-    justifyContent: 'space-between',
-    padding: spacing.lg,
-  },
-  topBar: {
-    alignItems: 'flex-start',
-  },
-  bottomBar: {
-    gap: spacing.md,
-    paddingBottom: spacing.xl,
-  },
-  hint: {
-    ...typography.body,
-    color: colors.textPrimary,
-    textAlign: 'center',
-    backgroundColor: colors.overlay,
-    padding: spacing.md,
-    borderRadius: 16,
-  },
-  centered: {
-    flex: 1,
-    alignItems: 'center',
-    justifyContent: 'center',
-    gap: spacing.md,
-  },
-  message: {
-    ...typography.body,
-    color: colors.textSecondary,
-    textAlign: 'center',
-  },
-});
+function createStyles(colors: ThemeColors) {
+  return StyleSheet.create({
+    container: {
+      flex: 1,
+      backgroundColor: '#000000',
+    },
+    overlay: {
+      ...StyleSheet.absoluteFill,
+      justifyContent: 'space-between',
+      padding: spacing.lg,
+    },
+    topBar: {
+      alignItems: 'flex-start',
+    },
+    bottomBar: {
+      gap: spacing.md,
+      paddingBottom: spacing.xl,
+    },
+    hint: {
+      ...typography.body,
+      color: '#F7F3EA',
+      textAlign: 'center',
+      backgroundColor: 'rgba(0, 0, 0, 0.55)',
+      padding: spacing.md,
+      borderRadius: 16,
+    },
+    centered: {
+      flex: 1,
+      alignItems: 'center',
+      justifyContent: 'center',
+      gap: spacing.md,
+    },
+    message: {
+      ...typography.body,
+      color: colors.textSecondary,
+      textAlign: 'center',
+    },
+  });
+}

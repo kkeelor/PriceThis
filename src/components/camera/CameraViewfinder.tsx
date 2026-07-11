@@ -1,15 +1,18 @@
 import { StyleSheet, View } from 'react-native';
 
-import { colors, radii } from '@/theme';
+import { useTheme } from '@/context/ThemeContext';
+import { radii } from '@/theme';
 
 export function CameraViewfinder() {
+  const { colors } = useTheme();
+
   return (
     <View style={styles.container} pointerEvents="none">
       <View style={styles.frame}>
-        <View style={[styles.corner, styles.topLeft]} />
-        <View style={[styles.corner, styles.topRight]} />
-        <View style={[styles.corner, styles.bottomLeft]} />
-        <View style={[styles.corner, styles.bottomRight]} />
+        <View style={[styles.corner, styles.topLeft, { borderColor: colors.accent }]} />
+        <View style={[styles.corner, styles.topRight, { borderColor: colors.accent }]} />
+        <View style={[styles.corner, styles.bottomLeft, { borderColor: colors.accent }]} />
+        <View style={[styles.corner, styles.bottomRight, { borderColor: colors.accent }]} />
       </View>
     </View>
   );
@@ -34,7 +37,6 @@ const styles = StyleSheet.create({
     position: 'absolute',
     width: CORNER,
     height: CORNER,
-    borderColor: colors.accent,
   },
   topLeft: {
     top: 0,

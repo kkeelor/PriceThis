@@ -1,28 +1,34 @@
-import { NavigationContainer, DarkTheme } from '@react-navigation/native';
+import { DarkTheme, DefaultTheme, NavigationContainer } from '@react-navigation/native';
 import { createNativeStackNavigator } from '@react-navigation/native-stack';
+import { useMemo } from 'react';
 
+import { useTheme } from '@/context/ThemeContext';
 import type { RootStackParamList } from '@/navigation/types';
 import { CameraScreen } from '@/screens/CameraScreen';
 import { HomeScreen } from '@/screens/HomeScreen';
 import { ResultScreen } from '@/screens/ResultScreen';
 import { SearchScreen } from '@/screens/SearchScreen';
-import { colors } from '@/theme';
 
 const Stack = createNativeStackNavigator<RootStackParamList>();
 
-const navigationTheme = {
-  ...DarkTheme,
-  colors: {
-    ...DarkTheme.colors,
-    background: colors.background,
-    card: colors.background,
-    text: colors.textPrimary,
-    border: colors.border,
-    primary: colors.accent,
-  },
-};
-
 export function RootNavigator() {
+  const { colors, isDark } = useTheme();
+
+  const navigationTheme = useMemo(
+    () => ({
+      ...(isDark ? DarkTheme : DefaultTheme),
+      colors: {
+        ...(isDark ? DarkTheme.colors : DefaultTheme.colors),
+        background: colors.background,
+        card: colors.background,
+        text: colors.textPrimary,
+        border: colors.border,
+        primary: colors.accent,
+      },
+    }),
+    [colors, isDark],
+  );
+
   return (
     <NavigationContainer theme={navigationTheme}>
       <Stack.Navigator
@@ -38,7 +44,11 @@ export function RootNavigator() {
           component={CameraScreen}
           options={{ animation: 'slide_from_bottom' }}
         />
-        <Stack.Screen name="Search" component={SearchScreen} />
+        <Stack.Screen
+          name="Search"
+          component={SearchScreen}
+          options={{ animation: 'slide_from_right' }}
+        />
         <Stack.Screen name="Result" component={ResultScreen} />
       </Stack.Navigator>
     </NavigationContainer>

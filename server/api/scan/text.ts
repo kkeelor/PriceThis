@@ -1,6 +1,7 @@
 import type { VercelRequest, VercelResponse } from '@vercel/node';
 
 import { scanTextWithClaude } from '../../lib/claude.js';
+import { buildProductListings } from '../../lib/listings.js';
 import { getMarketContextForQuery } from '../../lib/market-data.js';
 import { getRequestedModel, withModelMeta } from '../../lib/request-model.js';
 import type { ScanTextRequest } from '../../lib/types.js';
@@ -26,7 +27,15 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
       model: requestedModel,
     });
 
-    return res.status(200).json(withModelMeta(result, requestedModel));
+    return res.status(200).json(
+      withModelMeta(
+        {
+          ...result,
+          listings: buildProductListings(result.objectName, body.locale),
+        },
+        requestedModel,
+      ),
+    );
   } catch (error) {
     const message = error instanceof Error ? error.message : 'Scan failed';
     return res.status(500).json({ error: message });

@@ -19,6 +19,8 @@ if [[ ! -f "$STANDALONE_ENV" ]]; then
 fi
 
 API_URL="$(grep -E '^API_BASE_URL=' "$STANDALONE_ENV" | cut -d= -f2- | tr -d '"' || true)"
+VERSION_CODE="$(grep -E '^VERSION_CODE=' "$ROOT/android/version.properties" | cut -d= -f2- | tr -d ' ' || echo 1)"
+VERSION_NAME="$(grep -E '^VERSION_NAME=' "$ROOT/android/version.properties" | cut -d= -f2- | tr -d ' ' || echo 0.0.1)"
 if [[ -z "$API_URL" || "$API_URL" == *"your-pricethis-api"* ]]; then
   echo "Set API_BASE_URL in .env.standalone before building."
   echo "  Deployed: https://your-app.vercel.app"
@@ -33,10 +35,18 @@ fi
 
 echo "📦 Building standalone PriceThis"
 echo "   API → $API_URL"
+echo "   Version → $VERSION_NAME ($VERSION_CODE)"
 echo "   (JS bundled in APK — no Metro needed)"
 echo ""
 
-export ENVFILE="$STANDALONE_ENV"
+BUILD_ENV="$ROOT/.env.standalone.build"
+{
+  grep -v '^APP_VERSION_' "$STANDALONE_ENV" 2>/dev/null || cat "$STANDALONE_ENV"
+  echo "APP_VERSION_CODE=$VERSION_CODE"
+  echo "APP_VERSION_NAME=$VERSION_NAME"
+} > "$BUILD_ENV"
+
+export ENVFILE="$BUILD_ENV"
 
 cd "$ROOT/android"
 ./gradlew assembleRelease -PreactNativeArchitectures=arm64-v8a
