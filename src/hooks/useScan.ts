@@ -82,6 +82,27 @@ export function useScan({ onSuccess, showErrorAlert = true }: UseScanOptions) {
     [handleSuccess, preset, showErrorAlert],
   );
 
+  const runTextScanWithHero = useCallback(
+    async (query: string, heroImageUri?: string) => {
+      setIsScanning(true);
+      setError(null);
+      try {
+        const result = await scanByText(query, preset);
+        const withHero = heroImageUri ? { ...result, heroImageUri } : result;
+        await handleSuccess(withHero);
+      } catch (scanError) {
+        const message = getErrorMessage(scanError, 'Scan failed');
+        setError(message);
+        if (showErrorAlert) {
+          Alert.alert('Scan failed', message);
+        }
+      } finally {
+        setIsScanning(false);
+      }
+    },
+    [handleSuccess, preset, showErrorAlert],
+  );
+
   const clearError = useCallback(() => {
     setError(null);
   }, []);
@@ -91,6 +112,7 @@ export function useScan({ onSuccess, showErrorAlert = true }: UseScanOptions) {
     error,
     clearError,
     runTextScan,
+    runTextScanWithHero,
     runImageScan,
   };
 }

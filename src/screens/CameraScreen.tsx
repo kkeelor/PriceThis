@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useState } from 'react';
+import { useCallback, useEffect, useRef, useState } from 'react';
 import { ActivityIndicator, Alert, StyleSheet, View } from 'react-native';
 import {
   Camera,
@@ -6,9 +6,11 @@ import {
   useCameraDevice,
   useCameraPermission,
   usePhotoOutput,
+  type CameraRef,
 } from 'react-native-vision-camera';
 
 import { CameraViewfinder } from '@/components/camera/CameraViewfinder';
+import { CameraZoomControls } from '@/components/camera/CameraZoomControls';
 import { ScanningOverlay } from '@/components/ui/ScanningOverlay';
 import { AppText, Button } from '@/components/ui/Button';
 import { Screen } from '@/components/ui/Screen';
@@ -22,6 +24,7 @@ import { arrayBufferToBase64 } from '@/utils/base64';
 export function CameraScreen({ navigation }: CameraScreenProps) {
   const { colors } = useTheme();
   const styles = createStyles(colors);
+  const cameraRef = useRef<CameraRef>(null);
   const device = useCameraDevice('back');
   const photoOutput = usePhotoOutput({
     targetResolution: CommonResolutions.HD_16_9,
@@ -99,24 +102,32 @@ export function CameraScreen({ navigation }: CameraScreenProps) {
       <ScanningOverlay visible={isScanning} message="Identifying object…" />
 
       <Camera
+        ref={cameraRef}
         style={StyleSheet.absoluteFill}
         device={device}
         isActive={!isScanning}
         outputs={[photoOutput]}
+        enableNativeZoomGesture
         onPreviewStarted={() => setIsReady(true)}
       />
 
       <CameraViewfinder />
 
-      <View style={styles.overlay}>
+      <View style={styles.overlay} pointerEvents="box-none">
         <View style={styles.topBar}>
           <Button label="Close" variant="ghost" onPress={handleClose} />
         </View>
 
+        <CameraZoomControls
+          cameraRef={cameraRef}
+          device={device}
+          disabled={!isReady || isScanning}
+        />
+
         <View style={styles.bottomBar}>
           <AppText style={styles.hint}>
             {isReady
-              ? 'Point at something valuable, then tap to scan.'
+              ? 'Pinch to zoom, point at something valuable, then tap to scan.'
               : 'Opening camera…'}
           </AppText>
           <Button

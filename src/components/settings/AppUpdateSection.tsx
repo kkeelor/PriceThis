@@ -21,6 +21,9 @@ export function AppUpdateSection({ active }: AppUpdateSectionProps) {
     progress,
     updateAvailable,
     supported,
+    errorMessage,
+    errorDetails,
+    statusDetail,
     refreshCheck,
     downloadUpdate,
   } = useAppUpdate();
@@ -39,8 +42,9 @@ export function AppUpdateSection({ active }: AppUpdateSectionProps) {
 
   const isChecking = status === 'checking';
   const isDownloading = status === 'downloading';
+  const isVerifying = status === 'verifying';
   const isInstalling = status === 'installing';
-  const isBusy = isChecking || isDownloading || isInstalling;
+  const isBusy = isChecking || isDownloading || isVerifying || isInstalling;
 
   const handlePress = () => {
     if (updateAvailable && !isBusy) {
@@ -55,14 +59,18 @@ export function AppUpdateSection({ active }: AppUpdateSectionProps) {
   const buttonLabel = isChecking
     ? 'Checking…'
     : isDownloading
-      ? `Downloading… ${Math.round(progress * 100)}%`
-      : isInstalling
-        ? 'Opening installer…'
-        : 'Check for updates';
+      ? statusDetail && progress === 0
+        ? statusDetail
+        : `Downloading… ${Math.round(progress * 100)}%`
+      : isVerifying
+        ? statusDetail ?? 'Verifying download…'
+        : isInstalling
+          ? statusDetail ?? 'Opening installer…'
+          : 'Check for updates';
 
   return (
     <View style={styles.section}>
-      <AppText style={styles.sectionLabel}>App</AppText>
+      <AppText style={styles.sectionLabel}>App update</AppText>
       <View style={styles.card}>
         <AppText style={styles.version}>Version {versionName}</AppText>
 
@@ -88,10 +96,33 @@ export function AppUpdateSection({ active }: AppUpdateSectionProps) {
           ) : null}
         </Pressable>
 
-        {isDownloading ? (
+        {isDownloading || isVerifying ? (
           <View style={styles.progressTrack}>
-            <View style={[styles.progressFill, { width: `${Math.round(progress * 100)}%` }]} />
+            <View
+              style={[
+                styles.progressFill,
+                { width: `${isVerifying ? 100 : Math.round(progress * 100)}%` },
+              ]}
+            />
           </View>
+        ) : null}
+
+        {statusDetail && isBusy ? (
+          <AppText style={styles.debugText} selectable>
+            {statusDetail}
+          </AppText>
+        ) : null}
+
+        {errorMessage ? (
+          <AppText style={styles.errorText} selectable>
+            {errorMessage}
+          </AppText>
+        ) : null}
+
+        {errorDetails ? (
+          <AppText style={styles.debugText} selectable>
+            {errorDetails}
+          </AppText>
         ) : null}
       </View>
     </View>
@@ -181,6 +212,15 @@ function createStyles(colors: ThemeColors, isDark: boolean) {
       height: 3,
       borderRadius: 999,
       backgroundColor: colors.accent,
+    },
+    errorText: {
+      ...typography.caption,
+      color: colors.danger,
+    },
+    debugText: {
+      ...typography.caption,
+      color: colors.textMuted,
+      fontFamily: 'monospace',
     },
   });
 }

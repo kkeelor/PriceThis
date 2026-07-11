@@ -3,9 +3,10 @@ import { createNativeStackNavigator } from '@react-navigation/native-stack';
 import { useMemo } from 'react';
 
 import { useTheme } from '@/context/ThemeContext';
+import { MainTabNavigator } from '@/navigation/MainTabNavigator';
 import type { RootStackParamList } from '@/navigation/types';
 import { CameraScreen } from '@/screens/CameraScreen';
-import { HomeScreen } from '@/screens/HomeScreen';
+import { CategoryManagerScreen } from '@/screens/CategoryManagerScreen';
 import { ResultScreen } from '@/screens/ResultScreen';
 import { SearchScreen } from '@/screens/SearchScreen';
 
@@ -32,13 +33,13 @@ export function RootNavigator() {
   return (
     <NavigationContainer theme={navigationTheme}>
       <Stack.Navigator
-        initialRouteName="Home"
+        initialRouteName="MainTabs"
         screenOptions={{
           headerShown: false,
           animation: 'fade',
           contentStyle: { backgroundColor: colors.background },
         }}>
-        <Stack.Screen name="Home" component={HomeScreen} />
+        <Stack.Screen name="MainTabs" component={MainTabNavigator} />
         <Stack.Screen
           name="Camera"
           component={CameraScreen}
@@ -50,6 +51,11 @@ export function RootNavigator() {
           options={{ animation: 'slide_from_right' }}
         />
         <Stack.Screen name="Result" component={ResultScreen} />
+        <Stack.Screen
+          name="CategoryManager"
+          component={CategoryManagerScreen}
+          options={{ animation: 'slide_from_right' }}
+        />
       </Stack.Navigator>
     </NavigationContainer>
   );

@@ -2,8 +2,8 @@ import { Image, Pressable, StyleSheet, View } from 'react-native';
 import Swipeable from 'react-native-gesture-handler/ReanimatedSwipeable';
 
 import { AppText } from '@/components/ui/Button';
+import { useCurrency } from '@/context/CurrencyContext';
 import { useTheme } from '@/context/ThemeContext';
-import { formatCurrency } from '@/services/locale/currency';
 import type { ScanResult } from '@/types/scan';
 import { radii, spacing, typography } from '@/theme';
 import type { ThemeColors } from '@/theme/types';
@@ -32,6 +32,7 @@ const THUMB_SIZE = 52;
 
 export function RecentScanRow({ scan, onPress, onDelete }: RecentScanRowProps) {
   const { colors, isDark } = useTheme();
+  const { convertAndFormat } = useCurrency();
   const styles = createStyles(colors, isDark);
   const hasPhoto = Boolean(scan.heroImageUri);
 
@@ -66,7 +67,7 @@ export function RecentScanRow({ scan, onPress, onDelete }: RecentScanRowProps) {
             {scan.objectName}
           </AppText>
           <AppText style={styles.value}>
-            {formatCurrency(scan.estimatedValue, scan.currencyCode)}
+            {convertAndFormat(scan.estimatedValue, scan.currencyCode)}
           </AppText>
         </View>
         <AppText style={styles.chevron}>›</AppText>

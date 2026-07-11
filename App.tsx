@@ -6,6 +6,7 @@ import { SafeAreaProvider } from 'react-native-safe-area-context';
 import { Logo } from '@/components/brand/Logo';
 import { AppText } from '@/components/ui/Button';
 import { ModelPresetProvider } from '@/context/ModelPresetContext';
+import { CurrencyProvider } from '@/context/CurrencyContext';
 import { ThemeProvider, useTheme } from '@/context/ThemeContext';
 import { RootNavigator } from '@/navigation/RootNavigator';
 import { spacing, typography } from '@/theme';
@@ -28,7 +29,9 @@ function AppShell() {
       />
       {isReady ? (
         <ModelPresetProvider>
-          <RootNavigator />
+          <CurrencyProvider>
+            <RootNavigator />
+          </CurrencyProvider>
         </ModelPresetProvider>
       ) : (
         <View style={styles.loading}>

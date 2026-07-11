@@ -12,11 +12,12 @@ import {
 import { launchImageLibrary } from 'react-native-image-picker';
 
 import { Logo } from '@/components/brand/Logo';
-import { ModelDropdown } from '@/components/home/ModelDropdown';
 import { RecentScanRow } from '@/components/home/RecentScanRow';
+import { TryExampleChips } from '@/components/home/TryExampleChips';
 import { CameraIcon } from '@/components/icons/CameraIcon';
 import { SettingsMenu } from '@/components/settings/SettingsMenu';
 import { AppText, Button } from '@/components/ui/Button';
+import { ConfirmDialog } from '@/components/ui/ConfirmDialog';
 import { GlassCard } from '@/components/ui/GlassCard';
 import { ScanningOverlay } from '@/components/ui/ScanningOverlay';
 import { Screen } from '@/components/ui/Screen';
@@ -46,6 +47,7 @@ export function HomeScreen({ navigation }: HomeScreenProps) {
   const { scans, refresh, deleteScan, clearAll } = useRecentScans();
   const [refreshing, setRefreshing] = useState(false);
   const [scanMenuOpen, setScanMenuOpen] = useState(false);
+  const [clearConfirmOpen, setClearConfirmOpen] = useState(false);
   const [scanMenuAnchor, setScanMenuAnchor] = useState<ScanMenuAnchor | null>(null);
   const { isScanning, runImageScan } = useScan({
     onSuccess: result => {
@@ -102,14 +104,12 @@ export function HomeScreen({ navigation }: HomeScreenProps) {
   }, [closeScanMenu, navigation]);
 
   const handleClearAll = useCallback(() => {
-    Alert.alert('Delete all?', undefined, [
-      { text: 'Cancel', style: 'cancel' },
-      {
-        text: 'Delete all',
-        style: 'destructive',
-        onPress: clearAll,
-      },
-    ]);
+    setClearConfirmOpen(true);
+  }, []);
+
+  const handleConfirmClearAll = useCallback(() => {
+    clearAll();
+    setClearConfirmOpen(false);
   }, [clearAll]);
 
   const handleRefresh = useCallback(() => {
@@ -160,6 +160,10 @@ export function HomeScreen({ navigation }: HomeScreenProps) {
           onPress={() => navigation.navigate('Search')}
         />
 
+        <TryExampleChips
+          onSelect={query => navigation.navigate('Search', { initialQuery: query })}
+        />
+
         <View style={styles.scanSection}>
           <View ref={cameraAnchorRef} collapsable={false} style={styles.cameraAnchor}>
             <Pressable
@@ -207,8 +211,6 @@ export function HomeScreen({ navigation }: HomeScreenProps) {
           </Pressable>
         </Modal>
 
-        <ModelDropdown />
-
         <View style={styles.recentSection}>
           <View style={styles.recentHeader}>
             <AppText style={styles.sectionLabel}>Recent scans</AppText>
@@ -224,9 +226,10 @@ export function HomeScreen({ navigation }: HomeScreenProps) {
             ) : null}
           </View>
           {scans.length === 0 ? (
-            <GlassCard>
+            <GlassCard style={styles.emptyCard}>
+              <AppText style={styles.emptyTitle}>No scans yet</AppText>
               <AppText style={styles.emptyState}>
-                Your discoveries will appear here after your first scan.
+                Tap the camera button above or try an example to discover what things are worth.
               </AppText>
             </GlassCard>
           ) : (
@@ -243,6 +246,21 @@ export function HomeScreen({ navigation }: HomeScreenProps) {
           )}
         </View>
       </ScrollView>
+
+      <ConfirmDialog
+        visible={clearConfirmOpen}
+        title="Delete all scans?"
+        message={
+          scans.length === 1
+            ? 'This removes 1 saved scan from your history. This cannot be undone.'
+            : `This removes ${scans.length} saved scans from your history. This cannot be undone.`
+        }
+        confirmLabel="Delete all"
+        cancelLabel="Keep scans"
+        destructive
+        onCancel={() => setClearConfirmOpen(false)}
+        onConfirm={handleConfirmClearAll}
+      />
     </Screen>
   );
 }
@@ -354,6 +372,13 @@ function createStyles(colors: ThemeColors, isDark: boolean) {
     },
     trashHeaderIcon: {
       fontSize: 18,
+    },
+    emptyCard: {
+      gap: spacing.xs,
+    },
+    emptyTitle: {
+      ...typography.bodyStrong,
+      color: colors.textPrimary,
     },
     emptyState: {
       ...typography.body,

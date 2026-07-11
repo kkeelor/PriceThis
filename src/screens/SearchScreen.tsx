@@ -14,6 +14,7 @@ import { AppText, Button } from '@/components/ui/Button';
 import { GlassCard } from '@/components/ui/GlassCard';
 import { Screen } from '@/components/ui/Screen';
 import { SearchBar } from '@/components/ui/SearchBar';
+import { TRY_EXAMPLES } from '@/constants/tryExamples';
 import { useTheme } from '@/context/ThemeContext';
 import { useScan } from '@/hooks/useScan';
 import type { SearchScreenProps } from '@/navigation/types';
@@ -95,6 +96,16 @@ export function SearchScreen({ navigation, route }: SearchScreenProps) {
             disabled={query.trim().length === 0 || isScanning}
             onPress={handleSearch}
           />
+
+          {error ? null : (
+            <GlassCard style={styles.hintCard}>
+              <AppText style={styles.hintTitle}>Not sure what to search?</AppText>
+              <AppText style={styles.hintBody}>
+                Try a brand and model, like &quot;{TRY_EXAMPLES[0]}&quot; or &quot;{TRY_EXAMPLES[2]}&quot;.
+                You can also snap a photo from the home screen.
+              </AppText>
+            </GlassCard>
+          )}
         </ScrollView>
       </KeyboardAvoidingView>
     </Screen>
@@ -128,6 +139,17 @@ function createStyles(colors: ThemeColors) {
       color: colors.danger,
     },
     errorBody: {
+      ...typography.body,
+      color: colors.textSecondary,
+    },
+    hintCard: {
+      gap: spacing.xs,
+    },
+    hintTitle: {
+      ...typography.bodyStrong,
+      color: colors.textPrimary,
+    },
+    hintBody: {
       ...typography.body,
       color: colors.textSecondary,
     },

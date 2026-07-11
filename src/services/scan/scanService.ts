@@ -2,8 +2,8 @@ import type { ScanApiResponse } from '@/types/api';
 import type { ScanCategory, ScanResult } from '@/types/scan';
 import { apiClient } from '@/services/api/client';
 import { resolveListings } from '@/services/listings/buildListings';
+import { getSelectedCurrencyCode } from '@/services/currency/preferences';
 import {
-  getDeviceCurrencyCode,
   getDeviceLocale,
 } from '@/services/locale/currency';
 
@@ -58,7 +58,7 @@ export async function scanByText(
   const response = await apiClient.scanText({
     query,
     locale: getDeviceLocale(),
-    currencyCode: getDeviceCurrencyCode(),
+    currencyCode: getSelectedCurrencyCode(),
     model,
   });
 
@@ -76,7 +76,7 @@ export async function scanByImage(
   const response = await apiClient.scanImage({
     imageBase64,
     locale: getDeviceLocale(),
-    currencyCode: getDeviceCurrencyCode(),
+    currencyCode: getSelectedCurrencyCode(),
     model: options?.model,
   });
 

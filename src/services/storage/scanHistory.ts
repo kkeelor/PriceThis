@@ -1,3 +1,4 @@
+import { clearAllFavorites, removeFavorite } from '@/services/storage/favorites';
 import type { ScanResult } from '@/types/scan';
 import { deleteAllScanImages, deleteScanImage } from '@/services/storage/scanImages';
 import { storage, storageKeys } from '@/services/storage/mmkv';
@@ -41,6 +42,7 @@ function writeHistory(history: ScanResult[]): void {
 
 export function deleteScanById(id: string): void {
   writeHistory(readHistory().filter(item => item.id !== id));
+  removeFavorite(id);
   void deleteScanImage(id);
 }
 
@@ -56,5 +58,6 @@ export function updateScanAccuracy(
 
 export function clearAllScans(): void {
   writeHistory([]);
+  clearAllFavorites();
   void deleteAllScanImages();
 }

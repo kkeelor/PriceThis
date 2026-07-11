@@ -8,4 +8,8 @@ export const storageKeys = {
   favorites: 'favorites',
   modelPreset: 'model_preset',
   theme: 'app_theme',
+  currencyCode: 'currency_code',
+  exchangeRates: 'exchange_rates',
+  favoriteCategories: 'favorite_categories',
+  favoriteRecords: 'favorite_records',
 } as const;
