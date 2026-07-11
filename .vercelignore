@@ -1,0 +1,8 @@
+# Ignore mobile app files — API deploys from /server (set as Vercel Root Directory)
+android/
+ios/
+src/
+node_modules/
+.dev/
+*.apk
+*.aab

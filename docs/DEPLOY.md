@@ -15,11 +15,12 @@ git push -u origin main
 
 1. Go to [vercel.com/new](https://vercel.com/new)
 2. Import your **PriceThis** GitHub repo
-3. **Root Directory:** leave as **repo root** (default) — `api/` routes re-export from `server/`
-   - Or set Root Directory to `server` if you prefer deploying only the API folder
+3. **Root Directory:** `server` ← **required**
 4. Framework Preset: **Other**
 5. Build Command: leave empty (serverless functions only)
 6. Output Directory: leave empty
+
+> If scans fail with `FUNCTION_INVOCATION_FAILED` or `NOT_FOUND`, the Root Directory is almost always wrong. It must be `server`, not the repo root.
 
 ## 3. Environment variables (Vercel dashboard → Settings → Environment Variables)
 
