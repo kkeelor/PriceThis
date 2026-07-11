@@ -1,6 +1,7 @@
 import Config from 'react-native-config';
 
 import type { ScanApiResponse, ScanImageRequest, ScanTextRequest } from '@/types/api';
+import { parseApiErrorBody } from '@/utils/apiError';
 
 const DEFAULT_API_BASE_URL = 'http://localhost:3000';
 
@@ -30,30 +31,7 @@ async function postJson<TResponse>(
 
   if (!response.ok) {
     const text = await response.text();
-    let message = text || `Request failed with status ${response.status}`;
-    try {
-      const errorBody = JSON.parse(text) as { error?: string };
-      if (errorBody.error) {
-        message = errorBody.error;
-        // Unwrap nested Claude API errors for readability
-        const nested = message.match(/\{.*\}/s);
-        if (nested) {
-          try {
-            const claudeErr = JSON.parse(nested[0]) as {
-              error?: { message?: string };
-            };
-            if (claudeErr.error?.message) {
-              message = claudeErr.error.message;
-            }
-          } catch {
-            // keep message as-is
-          }
-        }
-      }
-    } catch {
-      // keep raw text
-    }
-    throw new Error(message);
+    throw new Error(parseApiErrorBody(text, response.status));
   }
 
   return response.json() as Promise<TResponse>;

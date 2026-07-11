@@ -3,6 +3,7 @@ import { Alert } from 'react-native';
 
 import { scanByImage, scanByText } from '@/services/scan/scanService';
 import type { ScanResult } from '@/types/scan';
+import { getErrorMessage } from '@/utils/errorMessage';
 
 type UseScanOptions = {
   onSuccess: (result: ScanResult) => void;
@@ -20,8 +21,7 @@ export function useScan({ onSuccess }: UseScanOptions) {
         const result = await scanByText(query);
         onSuccess(result);
       } catch (scanError) {
-        const message =
-          scanError instanceof Error ? scanError.message : 'Scan failed';
+        const message = getErrorMessage(scanError, 'Scan failed');
         setError(message);
         Alert.alert('Scan failed', message);
       } finally {
@@ -39,8 +39,7 @@ export function useScan({ onSuccess }: UseScanOptions) {
         const result = await scanByImage(imageBase64, heroImageUri);
         onSuccess(result);
       } catch (scanError) {
-        const message =
-          scanError instanceof Error ? scanError.message : 'Scan failed';
+        const message = getErrorMessage(scanError, 'Scan failed');
         setError(message);
         Alert.alert('Scan failed', message);
       } finally {
