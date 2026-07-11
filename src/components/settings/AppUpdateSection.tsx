@@ -1,10 +1,11 @@
 import { useEffect } from 'react';
-import { StyleSheet, View } from 'react-native';
+import { Pressable, StyleSheet, View } from 'react-native';
 
-import { Button } from '@/components/ui/Button';
+import { AppText } from '@/components/ui/Button';
 import { useTheme } from '@/context/ThemeContext';
 import { useAppUpdate } from '@/hooks/useAppUpdate';
-import { spacing } from '@/theme';
+import { getInstalledVersionName } from '@/services/app/appVersion';
+import { radii, spacing, typography } from '@/theme';
 import type { ThemeColors } from '@/theme/types';
 
 type AppUpdateSectionProps = {
@@ -12,9 +13,19 @@ type AppUpdateSectionProps = {
 };
 
 export function AppUpdateSection({ active }: AppUpdateSectionProps) {
-  const { colors } = useTheme();
-  const styles = createStyles(colors);
-  const { status, progress, updateAvailable, refreshCheck, downloadUpdate } = useAppUpdate();
+  const { colors, isDark } = useTheme();
+  const styles = createStyles(colors, isDark);
+  const {
+    check,
+    status,
+    progress,
+    updateAvailable,
+    supported,
+    refreshCheck,
+    downloadUpdate,
+  } = useAppUpdate();
+
+  const versionName = check?.currentVersionName ?? getInstalledVersionName();
 
   useEffect(() => {
     if (active) {
@@ -22,36 +33,143 @@ export function AppUpdateSection({ active }: AppUpdateSectionProps) {
     }
   }, [active, refreshCheck]);
 
-  const isBusy = status === 'downloading' || status === 'installing';
-  const visible = updateAvailable || isBusy;
-
-  if (!visible) {
+  if (!supported) {
     return null;
   }
 
-  const label =
-    status === 'downloading'
-      ? `Updating… ${Math.round(progress * 100)}%`
-      : status === 'installing'
+  const isChecking = status === 'checking';
+  const isDownloading = status === 'downloading';
+  const isInstalling = status === 'installing';
+  const isBusy = isChecking || isDownloading || isInstalling;
+
+  const handlePress = () => {
+    if (updateAvailable && !isBusy) {
+      void downloadUpdate();
+      return;
+    }
+    if (!isBusy) {
+      void refreshCheck();
+    }
+  };
+
+  const buttonLabel = isChecking
+    ? 'Checking…'
+    : isDownloading
+      ? `Downloading… ${Math.round(progress * 100)}%`
+      : isInstalling
         ? 'Opening installer…'
-        : 'Update';
+        : 'Check for updates';
 
   return (
     <View style={styles.section}>
-      <Button label={label} fullWidth disabled={isBusy} onPress={() => void downloadUpdate()} />
-      {status === 'downloading' ? (
-        <View style={styles.progressTrack}>
-          <View style={[styles.progressFill, { width: `${Math.round(progress * 100)}%` }]} />
-        </View>
-      ) : null}
+      <AppText style={styles.sectionLabel}>App</AppText>
+      <View style={styles.card}>
+        <AppText style={styles.version}>Version {versionName}</AppText>
+
+        <Pressable
+          accessibilityRole="button"
+          accessibilityLabel={
+            updateAvailable ? 'Download update, 1 available' : 'Check for updates'
+          }
+          disabled={isBusy}
+          onPress={handlePress}
+          style={({ pressed }) => [
+            styles.checkButton,
+            pressed && !isBusy && styles.checkButtonPressed,
+            isBusy && styles.checkButtonDisabled,
+          ]}>
+          <AppText style={styles.checkLabel} numberOfLines={1}>
+            {buttonLabel}
+          </AppText>
+          {updateAvailable && !isBusy ? (
+            <View style={styles.badge}>
+              <AppText style={styles.badgeText}>1</AppText>
+            </View>
+          ) : null}
+        </Pressable>
+
+        {isDownloading ? (
+          <View style={styles.progressTrack}>
+            <View style={[styles.progressFill, { width: `${Math.round(progress * 100)}%` }]} />
+          </View>
+        ) : null}
+      </View>
     </View>
   );
 }
 
-function createStyles(colors: ThemeColors) {
+function createStyles(colors: ThemeColors, isDark: boolean) {
   return StyleSheet.create({
     section: {
       gap: spacing.sm,
+    },
+    sectionLabel: {
+      ...typography.label,
+      color: colors.textMuted,
+    },
+    card: {
+      gap: spacing.sm,
+      backgroundColor: colors.surface,
+      borderWidth: isDark ? 1 : StyleSheet.hairlineWidth,
+      borderColor: colors.border,
+      borderRadius: radii.md,
+      padding: spacing.md,
+      ...(isDark
+        ? {}
+        : {
+            shadowColor: colors.shadow,
+            shadowOffset: { width: 0, height: 1 },
+            shadowOpacity: 0.04,
+            shadowRadius: 4,
+            elevation: 1,
+          }),
+    },
+    version: {
+      ...typography.caption,
+      color: colors.textSecondary,
+    },
+    checkButton: {
+      minHeight: 48,
+      borderRadius: radii.md,
+      borderWidth: 1,
+      borderColor: colors.border,
+      backgroundColor: colors.surfaceElevated,
+      alignItems: 'center',
+      justifyContent: 'center',
+      paddingHorizontal: spacing.lg,
+      paddingVertical: spacing.sm,
+    },
+    checkButtonPressed: {
+      opacity: 0.88,
+    },
+    checkButtonDisabled: {
+      opacity: 0.6,
+    },
+    checkLabel: {
+      ...typography.bodyStrong,
+      color: colors.textPrimary,
+      textAlign: 'center',
+    },
+    badge: {
+      position: 'absolute',
+      top: -6,
+      right: -6,
+      minWidth: 18,
+      height: 18,
+      borderRadius: 9,
+      paddingHorizontal: 4,
+      backgroundColor: colors.danger,
+      borderWidth: 1.5,
+      borderColor: colors.surfaceElevated,
+      alignItems: 'center',
+      justifyContent: 'center',
+    },
+    badgeText: {
+      ...typography.caption,
+      color: '#FFFFFF',
+      fontSize: 11,
+      lineHeight: 13,
+      fontWeight: '700',
     },
     progressTrack: {
       height: 3,

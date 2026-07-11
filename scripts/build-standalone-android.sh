@@ -57,9 +57,12 @@ echo "✅ Built: $APK"
 
 if command -v adb >/dev/null 2>&1 && adb devices 2>/dev/null | grep -w "device" | grep -v "List" >/dev/null; then
   echo "Installing on connected device…"
-  adb install -r "$APK"
-  adb shell am start -n com.pricethis/.MainActivity
-  echo "✅ Installed and launched."
+  if adb install -r "$APK"; then
+    adb shell am start -n com.pricethis/.MainActivity
+    echo "✅ Installed and launched."
+  else
+    echo "⚠ Install failed. Retry: adb install -r $APK"
+  fi
 else
   echo "No device connected. Install manually:"
   echo "  adb install -r $APK"

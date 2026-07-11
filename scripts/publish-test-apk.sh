@@ -58,6 +58,14 @@ const manifest = {
 fs.writeFileSync('$MANIFEST', JSON.stringify(manifest, null, 2) + '\n');
 NODE
 
+if command -v adb >/dev/null 2>&1 && adb devices 2>/dev/null | grep -w "device" | grep -v "List" >/dev/null; then
+  echo "Installing on connected device…"
+  adb install -r "$APK_SRC" || echo "⚠ Install failed — copy APK manually or retry adb install."
+  adb shell am start -n com.pricethis/.MainActivity 2>/dev/null || true
+else
+  echo "No device connected for install."
+fi
+
 echo ""
 echo "✅ Published locally:"
 echo "   APK → $APK_DEST"
