@@ -82,6 +82,7 @@ server/.env
 # Android release artifacts
 *.apk
 *.aab
+!server/public/releases/app-release.apk
 
 # Yarn
 .yarn/*
