@@ -51,10 +51,14 @@ function toScanResult(
   };
 }
 
+export type PendingScanResult = ScanResult & {
+  heroImageUrl?: string;
+};
+
 export async function scanByText(
   query: string,
   model?: string,
-): Promise<ScanResult> {
+): Promise<PendingScanResult> {
   const response = await apiClient.scanText({
     query,
     locale: getDeviceLocale(),
@@ -62,7 +66,15 @@ export async function scanByText(
     model,
   });
 
-  return toScanResult(response, 'search');
+  const result = toScanResult(response, 'search');
+  if (!response.heroImageUrl) {
+    return result;
+  }
+
+  return {
+    ...result,
+    heroImageUrl: response.heroImageUrl,
+  };
 }
 
 export async function scanByImage(

@@ -21,6 +21,20 @@ export async function persistHeroImage(
   try {
     await ReactNativeBlobUtil.fs.mkdir(SCAN_IMAGES_DIR);
     const destination = scanImagePath(scanId);
+
+    if (/^https?:\/\//i.test(sourceUri)) {
+      const response = await ReactNativeBlobUtil.config({
+        path: destination,
+        fileCache: false,
+      }).fetch('GET', sourceUri);
+
+      if (response.info().status !== 200) {
+        return undefined;
+      }
+
+      return toFileUri(destination);
+    }
+
     const normalizedSource = sourceUri.replace('file://', '');
 
     if (sourceUri.startsWith('content://')) {
@@ -31,7 +45,7 @@ export async function persistHeroImage(
 
     return toFileUri(destination);
   } catch {
-    return sourceUri;
+    return /^https?:\/\//i.test(sourceUri) ? undefined : sourceUri;
   }
 }
 

@@ -2,6 +2,8 @@ import http from 'node:http';
 
 import { scanImageWithClaude, scanTextWithClaude } from './lib/claude.js';
 import { listConfiguredModels } from './lib/models.js';
+import { buildProductListings } from './lib/listings.js';
+import { fetchItemImageUrl } from './lib/item-image.js';
 import { getMarketContextForImageLabel } from './lib/market-data.js';
 import { getMarketContextForQuery } from './lib/market-data.js';
 import { getRequestedModel, withModelMeta } from './lib/request-model.js';
@@ -68,7 +70,20 @@ const server = http.createServer(async (req, res) => {
         model: requestedModel,
       });
 
-      return sendJson(res, 200, withModelMeta(result, requestedModel));
+      const heroImageUrl = await fetchItemImageUrl(result.objectName);
+
+      return sendJson(
+        res,
+        200,
+        withModelMeta(
+          {
+            ...result,
+            heroImageUrl,
+            listings: buildProductListings(result.objectName, body.locale),
+          },
+          requestedModel,
+        ),
+      );
     } catch (error) {
       const message = error instanceof Error ? error.message : 'Scan failed';
       return sendJson(res, 500, { error: message });

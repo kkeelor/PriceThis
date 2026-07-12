@@ -26,6 +26,7 @@ export type ScanApiResponse = {
   curiosityCards: CuriosityCard[];
   category: ScanCategory;
   listings?: ProductListing[];
+  heroImageUrl?: string;
   meta?: {
     modelId: string;
     preset?: string;

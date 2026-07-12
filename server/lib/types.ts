@@ -30,6 +30,7 @@ export type ScanApiResponse = {
   curiosityCards: CuriosityCard[];
   category: string;
   listings: ProductListing[];
+  heroImageUrl?: string;
 };
 
 export type ScanImageRequest = {

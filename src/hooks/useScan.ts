@@ -2,7 +2,7 @@ import { useCallback, useState } from 'react';
 import { Alert } from 'react-native';
 
 import { useModelPreset } from '@/context/ModelPresetContext';
-import { scanByImage, scanByText } from '@/services/scan/scanService';
+import { scanByImage, scanByText, type PendingScanResult } from '@/services/scan/scanService';
 import { saveScanResult } from '@/services/storage/scanHistory';
 import { persistHeroImage } from '@/services/storage/scanImages';
 import type { ScanResult } from '@/types/scan';
@@ -19,16 +19,20 @@ export function useScan({ onSuccess, showErrorAlert = true }: UseScanOptions) {
   const [error, setError] = useState<string | null>(null);
 
   const handleSuccess = useCallback(
-    async (result: ScanResult) => {
-      let toSave = result;
-      if (result.heroImageUri) {
-        const persistedUri = await persistHeroImage(result.id, result.heroImageUri);
+    async (result: PendingScanResult) => {
+      const imageSource = result.heroImageUri ?? result.heroImageUrl;
+      let toSave: ScanResult = result;
+
+      if (imageSource) {
+        const persistedUri = await persistHeroImage(result.id, imageSource);
         if (persistedUri) {
           toSave = { ...result, heroImageUri: persistedUri };
         }
       }
-      saveScanResult(toSave);
-      onSuccess(toSave);
+
+      const { heroImageUrl: _heroImageUrl, ...saved } = toSave;
+      saveScanResult(saved);
+      onSuccess(saved);
     },
     [onSuccess],
   );

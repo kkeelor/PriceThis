@@ -66,7 +66,9 @@ export function AppUpdateSection({ active }: AppUpdateSectionProps) {
         ? statusDetail ?? 'Verifying download…'
         : isInstalling
           ? statusDetail ?? 'Opening installer…'
-          : 'Check for updates';
+          : updateAvailable
+            ? 'Update available'
+            : 'Check for updates';
 
   return (
     <View style={styles.section}>
@@ -77,7 +79,7 @@ export function AppUpdateSection({ active }: AppUpdateSectionProps) {
         <Pressable
           accessibilityRole="button"
           accessibilityLabel={
-            updateAvailable ? 'Download update, 1 available' : 'Check for updates'
+            updateAvailable ? 'Update available, tap to download' : 'Check for updates'
           }
           disabled={isBusy}
           onPress={handlePress}

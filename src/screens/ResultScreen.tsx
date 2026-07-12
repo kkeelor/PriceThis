@@ -1,6 +1,5 @@
 import { useCallback, useRef, useState } from 'react';
 import {
-  Image,
   Pressable,
   ScrollView,
   StyleSheet,
@@ -8,7 +7,7 @@ import {
 } from 'react-native';
 import { Heart } from 'lucide-react-native';
 
-import { AccuracyFeedback } from '@/components/result/AccuracyFeedback';
+import { ResultHeroImage } from '@/components/result/ResultHeroImage';
 import { AlternativeMatches } from '@/components/result/AlternativeMatches';
 import { CuriosityCardItem } from '@/components/result/CuriosityCardItem';
 import { ProductListings } from '@/components/result/ProductListings';
@@ -141,13 +140,7 @@ export function ResultScreen({ navigation, route }: ResultScreenProps) {
           </View>
         </View>
 
-        {initialResult.heroImageUri ? (
-          <Image source={{ uri: initialResult.heroImageUri }} style={styles.hero} />
-        ) : (
-          <View style={styles.heroPlaceholder}>
-            <AppText style={styles.heroPlaceholderText}>✨</AppText>
-          </View>
-        )}
+        <ResultHeroImage imageUri={initialResult.heroImageUri} objectName={initialResult.objectName} />
 
         <View style={styles.body}>
           <View style={styles.summary}>
@@ -265,21 +258,6 @@ function createStyles(colors: ThemeColors) {
       height: 44,
       alignItems: 'center',
       justifyContent: 'center',
-    },
-    hero: {
-      width: '100%',
-      height: 140,
-      backgroundColor: colors.surface,
-    },
-    heroPlaceholder: {
-      width: '100%',
-      height: 120,
-      backgroundColor: colors.surfaceElevated,
-      alignItems: 'center',
-      justifyContent: 'center',
-    },
-    heroPlaceholderText: {
-      fontSize: 40,
     },
     body: {
       paddingHorizontal: spacing.lg,
