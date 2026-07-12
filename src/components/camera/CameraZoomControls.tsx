@@ -1,111 +1,177 @@
-import { useCallback, useMemo } from 'react';
-import { Pressable, StyleSheet, View } from 'react-native';
-import type { CameraDevice, CameraRef } from 'react-native-vision-camera';
+import { useCallback, useMemo, useRef, useState } from 'react';
+import {
+  LayoutChangeEvent,
+  PanResponder,
+  StyleSheet,
+  View,
+} from 'react-native';
 
 import { AppText } from '@/components/ui/Button';
+import { formatDisplayZoomLabel, toDisplayZoomFactor } from '@/utils/cameraZoom';
 import { radii, spacing, typography } from '@/theme';
 
 type CameraZoomControlsProps = {
-  device: CameraDevice;
-  cameraRef: React.RefObject<CameraRef | null>;
+  zoom: number;
+  minZoom: number;
+  maxZoom: number;
+  oneXZoom: number;
   disabled?: boolean;
+  onZoomChange: (zoom: number) => void;
 };
 
-function buildZoomPresets(device: CameraDevice): number[] {
-  const { minZoom, maxZoom, zoomLensSwitchFactors } = device;
-  const candidates =
-    zoomLensSwitchFactors.length > 0
-      ? [minZoom, ...zoomLensSwitchFactors]
-      : [minZoom, minZoom * 2, Math.min(minZoom * 4, maxZoom)];
+const THUMB_SIZE = 22;
+const TRACK_HEIGHT = 4;
 
-  return [...new Set(candidates)]
-    .filter(zoom => zoom >= minZoom && zoom <= maxZoom)
-    .slice(0, 4);
+function clampZoom(value: number, minZoom: number, maxZoom: number): number {
+  return Math.min(maxZoom, Math.max(minZoom, value));
 }
 
-function formatZoomLabel(zoom: number, minZoom: number): string {
-  const factor = zoom / minZoom;
-  if (factor < 1.1) {
-    return '1×';
+function zoomFromRatio(ratio: number, minZoom: number, maxZoom: number): number {
+  const clamped = Math.max(0, Math.min(1, ratio));
+  return minZoom + clamped * (maxZoom - minZoom);
+}
+
+function ratioFromZoom(zoom: number, minZoom: number, maxZoom: number): number {
+  if (maxZoom <= minZoom) {
+    return 0;
   }
-  if (factor < 1.6) {
-    return '1.5×';
-  }
-  if (factor < 2.5) {
-    return '2×';
-  }
-  if (factor < 3.5) {
-    return '3×';
-  }
-  if (factor < 5.5) {
-    return '5×';
-  }
-  return `${Math.round(factor)}×`;
+  return (zoom - minZoom) / (maxZoom - minZoom);
 }
 
 export function CameraZoomControls({
-  device,
-  cameraRef,
+  zoom,
+  minZoom,
+  maxZoom,
+  oneXZoom,
   disabled = false,
+  onZoomChange,
 }: CameraZoomControlsProps) {
-  const presets = useMemo(() => buildZoomPresets(device), [device]);
+  const [trackWidth, setTrackWidth] = useState(0);
+  const trackWidthRef = useRef(0);
 
-  const applyZoom = useCallback(
-    (zoom: number) => {
-      cameraRef.current?.startZoomAnimation(zoom, 3);
+  const displayFactor = toDisplayZoomFactor(zoom, oneXZoom);
+  const thumbOffset = ratioFromZoom(zoom, minZoom, maxZoom) * Math.max(trackWidth - THUMB_SIZE, 0);
+
+  const applyZoomAtX = useCallback(
+    (x: number) => {
+      if (trackWidthRef.current <= 0) {
+        return;
+      }
+
+      const ratio = x / trackWidthRef.current;
+      onZoomChange(clampZoom(zoomFromRatio(ratio, minZoom, maxZoom), minZoom, maxZoom));
     },
-    [cameraRef],
+    [maxZoom, minZoom, onZoomChange],
   );
 
-  if (presets.length <= 1) {
+  const panResponder = useMemo(
+    () =>
+      PanResponder.create({
+        onStartShouldSetPanResponder: () => !disabled,
+        onMoveShouldSetPanResponder: () => !disabled,
+        onPanResponderGrant: event => {
+          applyZoomAtX(event.nativeEvent.locationX);
+        },
+        onPanResponderMove: event => {
+          applyZoomAtX(event.nativeEvent.locationX);
+        },
+      }),
+    [applyZoomAtX, disabled, zoom],
+  );
+
+  const handleTrackLayout = useCallback((event: LayoutChangeEvent) => {
+    const width = event.nativeEvent.layout.width;
+    trackWidthRef.current = width;
+    setTrackWidth(width);
+  }, []);
+
+  if (maxZoom <= minZoom) {
     return null;
   }
 
   return (
-    <View style={styles.row}>
-      {presets.map(zoom => (
-        <Pressable
-          key={zoom}
-          disabled={disabled}
-          onPress={() => applyZoom(zoom)}
-          style={({ pressed }) => [
-            styles.chip,
-            pressed && !disabled && styles.chipPressed,
-            disabled && styles.chipDisabled,
-          ]}>
-          <AppText style={styles.label}>{formatZoomLabel(zoom, device.minZoom)}</AppText>
-        </Pressable>
-      ))}
+    <View style={styles.container}>
+      <AppText style={styles.label}>{formatDisplayZoomLabel(displayFactor)}</AppText>
+      <View
+        style={[styles.trackWrap, disabled && styles.disabled]}
+        onLayout={handleTrackLayout}
+        {...panResponder.panHandlers}>
+        <View style={styles.track}>
+          <View
+            style={[
+              styles.fill,
+              {
+                width: thumbOffset + THUMB_SIZE / 2,
+              },
+            ]}
+          />
+        </View>
+        <View
+          style={[
+            styles.thumb,
+            {
+              transform: [{ translateX: thumbOffset }],
+            },
+          ]}
+        />
+      </View>
+      <AppText style={styles.edgeLabel}>{formatDisplayZoomLabel(toDisplayZoomFactor(maxZoom, oneXZoom))}</AppText>
     </View>
   );
 }
 
 const styles = StyleSheet.create({
-  row: {
+  container: {
     flexDirection: 'row',
+    alignItems: 'center',
     alignSelf: 'center',
     gap: spacing.sm,
     backgroundColor: 'rgba(0, 0, 0, 0.45)',
-    paddingHorizontal: spacing.sm,
-    paddingVertical: spacing.xs,
+    paddingHorizontal: spacing.md,
+    paddingVertical: spacing.sm,
     borderRadius: radii.pill,
-  },
-  chip: {
-    minWidth: 44,
-    paddingHorizontal: spacing.sm,
-    paddingVertical: spacing.xs,
-    borderRadius: radii.pill,
-    alignItems: 'center',
-  },
-  chipPressed: {
-    backgroundColor: 'rgba(255, 255, 255, 0.18)',
-  },
-  chipDisabled: {
-    opacity: 0.5,
+    minWidth: 220,
   },
   label: {
     ...typography.caption,
     color: '#F7F3EA',
-    fontWeight: '600',
+    fontWeight: '700',
+    minWidth: 28,
+    textAlign: 'center',
+  },
+  edgeLabel: {
+    ...typography.caption,
+    color: 'rgba(247, 243, 234, 0.65)',
+    minWidth: 24,
+    textAlign: 'right',
+  },
+  trackWrap: {
+    flex: 1,
+    height: 32,
+    justifyContent: 'center',
+  },
+  disabled: {
+    opacity: 0.5,
+  },
+  track: {
+    height: TRACK_HEIGHT,
+    borderRadius: TRACK_HEIGHT / 2,
+    backgroundColor: 'rgba(255, 255, 255, 0.22)',
+    overflow: 'hidden',
+  },
+  fill: {
+    height: TRACK_HEIGHT,
+    borderRadius: TRACK_HEIGHT / 2,
+    backgroundColor: 'rgba(247, 243, 234, 0.85)',
+  },
+  thumb: {
+    position: 'absolute',
+    top: (32 - THUMB_SIZE) / 2,
+    width: THUMB_SIZE,
+    height: THUMB_SIZE,
+    borderRadius: THUMB_SIZE / 2,
+    backgroundColor: '#F7F3EA',
+    borderWidth: 2,
+    borderColor: 'rgba(0, 0, 0, 0.25)',
   },
 });

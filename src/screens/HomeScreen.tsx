@@ -142,7 +142,7 @@ export function HomeScreen({ navigation }: HomeScreenProps) {
           />
         }>
         <View style={styles.header}>
-          <Logo size="md" style={styles.logoMark} />
+          <Logo size="md" shape="circle" style={styles.logoMark} />
           <AppText style={styles.wordmark} numberOfLines={1} adjustsFontSizeToFit>
             PriceThis
           </AppText>

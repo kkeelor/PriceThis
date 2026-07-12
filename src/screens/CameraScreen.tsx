@@ -16,10 +16,12 @@ import { AppText, Button } from '@/components/ui/Button';
 import { Screen } from '@/components/ui/Screen';
 import { useTheme } from '@/context/ThemeContext';
 import { useScan } from '@/hooks/useScan';
+import { useVolumeShutter } from '@/hooks/useVolumeShutter';
 import type { CameraScreenProps } from '@/navigation/types';
 import { spacing, typography } from '@/theme';
 import type { ThemeColors } from '@/theme/types';
 import { arrayBufferToBase64 } from '@/utils/base64';
+import { computeOneXZoom, estimateOneXZoom } from '@/utils/cameraZoom';
 
 export function CameraScreen({ navigation }: CameraScreenProps) {
   const { colors } = useTheme();
@@ -33,12 +35,26 @@ export function CameraScreen({ navigation }: CameraScreenProps) {
   });
   const { hasPermission, requestPermission } = useCameraPermission();
   const [isReady, setIsReady] = useState(false);
+  const [zoom, setZoom] = useState(1);
+  const [zoomLimits, setZoomLimits] = useState({ min: 1, max: 1 });
+  const [oneXZoom, setOneXZoom] = useState(1);
 
   const { isScanning, runImageScan } = useScan({
     onSuccess: result => {
       navigation.replace('Result', { result });
     },
   });
+
+  useEffect(() => {
+    if (!device) {
+      return;
+    }
+
+    const estimated = estimateOneXZoom(device);
+    setOneXZoom(estimated);
+    setZoom(estimated);
+    setZoomLimits({ min: device.minZoom, max: device.maxZoom });
+  }, [device]);
 
   useEffect(() => {
     if (!hasPermission) {
@@ -71,6 +87,30 @@ export function CameraScreen({ navigation }: CameraScreenProps) {
       Alert.alert('Capture failed', message);
     }
   }, [isReady, isScanning, photoOutput, runImageScan]);
+
+  useVolumeShutter({
+    enabled: isReady && !isScanning,
+    onCapture: () => {
+      void handleScan();
+    },
+  });
+
+  const handlePreviewStarted = useCallback(() => {
+    const controller = cameraRef.current?.controller;
+    if (controller) {
+      const oneX = computeOneXZoom(controller);
+      setOneXZoom(oneX);
+      setZoomLimits({ min: controller.minZoom, max: controller.maxZoom });
+      setZoom(oneX);
+      void controller.setZoom(oneX);
+    }
+    setIsReady(true);
+  }, []);
+
+  const handleZoomChange = useCallback((nextZoom: number) => {
+    setZoom(nextZoom);
+    void cameraRef.current?.controller?.setZoom(nextZoom);
+  }, []);
 
   if (!hasPermission) {
     return (
@@ -107,8 +147,8 @@ export function CameraScreen({ navigation }: CameraScreenProps) {
         device={device}
         isActive={!isScanning}
         outputs={[photoOutput]}
-        enableNativeZoomGesture
-        onPreviewStarted={() => setIsReady(true)}
+        zoom={zoom}
+        onPreviewStarted={handlePreviewStarted}
       />
 
       <CameraViewfinder />
@@ -119,15 +159,18 @@ export function CameraScreen({ navigation }: CameraScreenProps) {
         </View>
 
         <CameraZoomControls
-          cameraRef={cameraRef}
-          device={device}
+          zoom={zoom}
+          minZoom={zoomLimits.min}
+          maxZoom={zoomLimits.max}
+          oneXZoom={oneXZoom}
           disabled={!isReady || isScanning}
+          onZoomChange={handleZoomChange}
         />
 
         <View style={styles.bottomBar}>
           <AppText style={styles.hint}>
             {isReady
-              ? 'Pinch to zoom, point at something valuable, then tap to scan.'
+              ? 'Slide to zoom. Volume buttons also capture. Point at something valuable, then tap to scan.'
               : 'Opening camera…'}
           </AppText>
           <Button
