@@ -8,6 +8,7 @@ import { getMarketContextForImageLabel } from './lib/market-data.js';
 import { getMarketContextForQuery } from './lib/market-data.js';
 import { getRequestedModel, withModelMeta } from './lib/request-model.js';
 import type { ScanImageRequest, ScanTextRequest } from './lib/types.js';
+import { isWebSearchEnabled } from './lib/web-search.js';
 
 const PORT = Number(process.env.PORT ?? 3000);
 
@@ -42,6 +43,7 @@ const server = http.createServer(async (req, res) => {
     return sendJson(res, 200, {
       ok: true,
       claudeConfigured: Boolean(process.env.ANTHROPIC_API_KEY),
+      webSearchEnabled: isWebSearchEnabled(),
       models: listConfiguredModels(),
     });
   }
@@ -66,6 +68,7 @@ const server = http.createServer(async (req, res) => {
         query: body.query.trim(),
         locale: body.locale,
         currencyCode: body.currencyCode,
+        countryCode: body.countryCode,
         marketContext,
         model: requestedModel,
       });
@@ -105,6 +108,7 @@ const server = http.createServer(async (req, res) => {
         imageBase64: body.imageBase64,
         locale: body.locale,
         currencyCode: body.currencyCode,
+        countryCode: body.countryCode,
         marketContext,
         model: requestedModel,
       });

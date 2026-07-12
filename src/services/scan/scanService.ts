@@ -4,6 +4,7 @@ import { apiClient } from '@/services/api/client';
 import { resolveListings } from '@/services/listings/buildListings';
 import { getSelectedCurrencyCode } from '@/services/currency/preferences';
 import {
+  getDeviceCountryCode,
   getDeviceLocale,
 } from '@/services/locale/currency';
 
@@ -63,6 +64,7 @@ export async function scanByText(
     query,
     locale: getDeviceLocale(),
     currencyCode: getSelectedCurrencyCode(),
+    countryCode: getDeviceCountryCode(),
     model,
   });
 
@@ -89,6 +91,7 @@ export async function scanByImage(
     imageBase64,
     locale: getDeviceLocale(),
     currencyCode: getSelectedCurrencyCode(),
+    countryCode: getDeviceCountryCode(),
     model: options?.model,
   });
 

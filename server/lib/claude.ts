@@ -2,6 +2,7 @@ import Anthropic from '@anthropic-ai/sdk';
 
 import { resolveModel } from './models.js';
 import type { ScanApiResponse } from './types.js';
+import { buildWebSearchTools, isWebSearchEnabled } from './web-search.js';
 
 function getClient(): Anthropic {
   const apiKey = process.env.ANTHROPIC_API_KEY;
@@ -30,7 +31,19 @@ const responseSchema = `{
   "category": "cars | watches | travel | luxury | architecture | technology | collectibles | art | real_estate | other"
 }`;
 
-function buildSystemPrompt(currencyCode: string, locale: string): string {
+function buildSystemPrompt(
+  currencyCode: string,
+  locale: string,
+  webSearchEnabled: boolean,
+): string {
+  const searchRules = webSearchEnabled
+    ? `- Before estimating value, search for current resale and retail prices for this object in the user's market (${locale}).
+- Prefer local listings and marketplaces relevant to the region. Use resale/used prices when condition is unclear.
+- Return estimatedValue in ${currencyCode}. If sources use another currency, convert using current rates.
+- If search results are sparse or conflicting, estimate conservatively and lower confidence.
+- Do not mention search or citations in the JSON; fold findings into explanation.summary.`
+    : `- Prefer real-world market knowledge. When unsure, estimate conservatively and lower confidence.`;
+
   return `You are PriceThis, an AI curiosity engine for valuable physical objects.
 
 Rules:
@@ -41,7 +54,7 @@ Rules:
 - wowInsight: one surprising, respectful, factual sentence users would want to share.
 - curiosityCards: 3-5 most relevant cards only, with concise preview and richer content.
 - explanation.features: 3-5 visual or identifying features.
-- Prefer real-world market knowledge. When unsure, estimate conservatively and lower confidence.
+${searchRules}
 - Respond with JSON only, matching this schema:
 ${responseSchema}`;
 }
@@ -61,73 +74,82 @@ function parseResponse(text: string): ScanApiResponse {
   return parsed;
 }
 
+function extractFinalText(response: Anthropic.Message): string {
+  const textBlocks = response.content.filter(
+    (block): block is Anthropic.TextBlock => block.type === 'text',
+  );
+  const last = textBlocks[textBlocks.length - 1];
+  if (!last?.text) {
+    throw new Error('Claude returned an empty response');
+  }
+
+  return last.text;
+}
+
+type ScanClaudeParams = {
+  locale: string;
+  currencyCode: string;
+  countryCode?: string;
+  marketContext?: string;
+  model?: string;
+};
+
+async function createScanResponse(
+  params: ScanClaudeParams,
+  userContent: Anthropic.MessageParam['content'],
+): Promise<ScanApiResponse> {
+  const client = getClient();
+  const { id: modelId } = resolveModel(params.model);
+  const webSearchEnabled = isWebSearchEnabled();
+  const tools = buildWebSearchTools(params.countryCode, params.locale);
+
+  const response = await client.messages.create({
+    model: modelId,
+    max_tokens: webSearchEnabled ? 2200 : 1800,
+    system: buildSystemPrompt(params.currencyCode, params.locale, webSearchEnabled),
+    messages: [{ role: 'user', content: userContent }],
+    ...(tools ? { tools } : {}),
+  });
+
+  return parseResponse(extractFinalText(response));
+}
+
 export async function scanImageWithClaude(params: {
   imageBase64: string;
   locale: string;
   currencyCode: string;
+  countryCode?: string;
   marketContext?: string;
   model?: string;
 }): Promise<ScanApiResponse> {
-  const client = getClient();
-  const { id: modelId } = resolveModel(params.model);
   const userText = params.marketContext
     ? `Identify this object and estimate value. Market context:\n${params.marketContext}`
     : 'Identify this object and estimate its market value.';
 
-  const response = await client.messages.create({
-    model: modelId,
-    max_tokens: 1800,
-    system: buildSystemPrompt(params.currencyCode, params.locale),
-    messages: [
-      {
-        role: 'user',
-        content: [
-          {
-            type: 'image',
-            source: {
-              type: 'base64',
-              media_type: 'image/jpeg',
-              data: params.imageBase64,
-            },
-          },
-          { type: 'text', text: userText },
-        ],
+  return createScanResponse(params, [
+    {
+      type: 'image',
+      source: {
+        type: 'base64',
+        media_type: 'image/jpeg',
+        data: params.imageBase64,
       },
-    ],
-  });
-
-  const textBlock = response.content.find(block => block.type === 'text');
-  if (!textBlock || textBlock.type !== 'text') {
-    throw new Error('Claude returned an empty response');
-  }
-
-  return parseResponse(textBlock.text);
+    },
+    { type: 'text', text: userText },
+  ]);
 }
 
 export async function scanTextWithClaude(params: {
   query: string;
   locale: string;
   currencyCode: string;
+  countryCode?: string;
   marketContext?: string;
   model?: string;
 }): Promise<ScanApiResponse> {
-  const client = getClient();
-  const { id: modelId } = resolveModel(params.model);
   const userText = params.marketContext
     ? `Object query: ${params.query}\nMarket context:\n${params.marketContext}`
     : `Object query: ${params.query}`;
 
-  const response = await client.messages.create({
-    model: modelId,
-    max_tokens: 1800,
-    system: buildSystemPrompt(params.currencyCode, params.locale),
-    messages: [{ role: 'user', content: userText }],
-  });
-
-  const textBlock = response.content.find(block => block.type === 'text');
-  if (!textBlock || textBlock.type !== 'text') {
-    throw new Error('Claude returned an empty response');
-  }
-
-  return parseResponse(textBlock.text);
+  return createScanResponse(params, userText);
 }

@@ -9,6 +9,10 @@ export function getDeviceCurrencyCode(): string {
   return currency ?? 'USD';
 }
 
+export function getDeviceCountryCode(): string {
+  return RNLocalize.getCountry() ?? 'US';
+}
+
 export function formatCurrency(
   amount: number,
   currencyCode = getDeviceCurrencyCode(),

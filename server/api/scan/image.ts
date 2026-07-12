@@ -23,6 +23,7 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
       imageBase64: body.imageBase64,
       locale: body.locale,
       currencyCode: body.currencyCode,
+      countryCode: body.countryCode,
       marketContext,
       model: requestedModel,
     });

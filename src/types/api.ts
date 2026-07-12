@@ -5,6 +5,7 @@ export type ScanImageRequest = {
   imageBase64: string;
   locale: string;
   currencyCode: string;
+  countryCode?: string;
   model?: string;
 };
 
@@ -12,6 +13,7 @@ export type ScanTextRequest = {
   query: string;
   locale: string;
   currencyCode: string;
+  countryCode?: string;
   model?: string;
 };
 

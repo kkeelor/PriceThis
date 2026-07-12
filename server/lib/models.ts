@@ -1,4 +1,4 @@
-const FALLBACK_MODEL = 'claude-sonnet-4-6';
+const FALLBACK_MODEL = 'claude-haiku-4-5';
 
 export const MODEL_PRESETS = {
   default: 'CLAUDE_MODEL',

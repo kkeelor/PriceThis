@@ -27,12 +27,14 @@ git push -u origin main
 | Variable | Value | Notes |
 |----------|-------|-------|
 | `ANTHROPIC_API_KEY` | `sk-ant-...` | **Required** |
-| `CLAUDE_MODEL` | `claude-sonnet-4-6` | Default when no preset is requested |
+| `CLAUDE_MODEL` | `claude-haiku-4-5` | Default when no preset is requested |
 | `CLAUDE_MODEL_SONNET` | `claude-sonnet-4-6` | Preset: `sonnet` |
 | `CLAUDE_MODEL_OPUS` | `claude-opus-4-6` | Preset: `opus` |
 | `CLAUDE_MODEL_HAIKU` | `claude-haiku-4-5` | Preset: `haiku` |
 | `CLAUDE_MODEL_FAST` | `claude-haiku-4-5` | Preset: `fast` (alias for quick/cheap tests) |
 | `CLAUDE_MODEL_QUALITY` | `claude-opus-4-6` | Preset: `quality` (alias for best quality) |
+| `CLAUDE_WEB_SEARCH` | `true` | Enable Claude web search for price grounding (set `false` to disable) |
+| `WEB_SEARCH_MAX_USES` | `1` | Max searches per scan (cost + latency cap) |
 | `MARKET_DATA_ENABLED` | `true` | Optional |
 
 After changing env vars, **redeploy** on Vercel.

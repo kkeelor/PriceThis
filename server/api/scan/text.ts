@@ -24,6 +24,7 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
       query: body.query.trim(),
       locale: body.locale,
       currencyCode: body.currencyCode,
+      countryCode: body.countryCode,
       marketContext,
       model: requestedModel,
     });
