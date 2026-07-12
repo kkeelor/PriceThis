@@ -1,7 +1,7 @@
 import type { VercelRequest } from '@vercel/node';
 import type { IncomingMessage } from 'node:http';
 
-import { resolveModel } from './models.js';
+import { resolveScanTarget } from './resolve-scan.js';
 import type { PipelineMeta } from './scan-pipeline.js';
 
 type ModelCarrier = {
@@ -27,17 +27,19 @@ export function withScanMeta<T extends Record<string, unknown>>(
 ): T & {
   meta: {
     modelId: string;
+    provider: 'claude' | 'gemini';
     preset?: string;
     pipeline?: PipelineMeta;
   };
 } {
-  const resolved = resolveModel(requestedModel);
+  const target = resolveScanTarget(requestedModel);
 
   return {
     ...result,
     meta: {
-      modelId: resolved.id,
-      ...(resolved.preset ? { preset: resolved.preset } : {}),
+      modelId: target.modelId,
+      provider: target.provider,
+      ...(target.preset ? { preset: target.preset } : {}),
       ...(pipeline ? { pipeline } : {}),
     },
   };

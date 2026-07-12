@@ -26,7 +26,9 @@ git push -u origin main
 
 | Variable | Value | Notes |
 |----------|-------|-------|
-| `ANTHROPIC_API_KEY` | `sk-ant-...` | **Required** |
+| `ANTHROPIC_API_KEY` | `sk-ant-...` | **Required** for Claude presets |
+| `GEMINI_API_KEY` | `AQ....` | **Required** for Settings → Gemini Flash-Lite |
+| `GEMINI_MODEL` | `gemini-3.1-flash-lite` | Gemini model id when preset is `gemini` |
 | `CLAUDE_MODEL` | `claude-haiku-4-5` | Default when no preset is requested |
 | `CLAUDE_MODEL_SONNET` | `claude-sonnet-4-6` | Preset: `sonnet` |
 | `CLAUDE_MODEL_OPUS` | `claude-opus-4-6` | Preset: `opus` |

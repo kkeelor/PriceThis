@@ -2,6 +2,7 @@ export const MODEL_PRESETS = [
   'default',
   'haiku',
   'fast',
+  'gemini',
   'sonnet',
   'quality',
   'opus',
@@ -10,12 +11,13 @@ export const MODEL_PRESETS = [
 export type ModelPreset = (typeof MODEL_PRESETS)[number];
 
 export const MODEL_PRESET_LABELS: Record<ModelPreset, string> = {
-  default: 'Default',
-  haiku: 'Haiku',
-  fast: 'Fast',
-  sonnet: 'Sonnet',
-  quality: 'Quality',
-  opus: 'Opus',
+  default: 'Default (Haiku)',
+  haiku: 'Claude Haiku',
+  fast: 'Claude Fast',
+  gemini: 'Gemini Flash-Lite',
+  sonnet: 'Claude Sonnet',
+  quality: 'Claude Quality',
+  opus: 'Claude Opus',
 };
 
 export const DEFAULT_MODEL_PRESET: ModelPreset = 'default';

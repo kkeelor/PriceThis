@@ -7,6 +7,7 @@ import { getMarketContextForImageLabel } from './lib/market-data.js';
 import { getMarketContextForQuery } from './lib/market-data.js';
 import { getRequestedModel, withScanMeta } from './lib/request-model.js';
 import { isPipelineEnabled } from './lib/scan-gates.js';
+import { isGeminiConfigured } from './lib/resolve-scan.js';
 import { runImageScanPipeline, runTextScanPipeline } from './lib/scan-pipeline.js';
 import type { ScanImageRequest, ScanTextRequest } from './lib/types.js';
 import { isWebSearchEnabled } from './lib/web-search.js';
@@ -46,6 +47,7 @@ const server = http.createServer(async (req, res) => {
       claudeConfigured: Boolean(process.env.ANTHROPIC_API_KEY),
       webSearchEnabled: isWebSearchEnabled(),
       pipelineEnabled: isPipelineEnabled(),
+      geminiConfigured: isGeminiConfigured(),
       models: listConfiguredModels(),
     });
   }

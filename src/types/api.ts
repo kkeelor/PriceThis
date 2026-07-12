@@ -33,13 +33,16 @@ export type ScanApiResponse = {
   heroImageUrl?: string;
   meta?: {
     modelId: string;
+    provider?: 'claude' | 'gemini';
     preset?: string;
     pipeline?: {
       enabled: boolean;
+      provider?: 'claude' | 'gemini';
       stages: string[];
       idGate: string;
       valueGate: string;
       searchUsed: boolean;
+      inferenceCalls?: number;
       claudeCalls: number;
       durationMs: number;
     };

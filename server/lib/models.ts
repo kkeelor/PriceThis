@@ -53,7 +53,7 @@ export function resolveModel(requested?: string): ResolvedModel {
   }
 
   throw new Error(
-    `Unknown model "${requested}". Use a preset (${Object.keys(MODEL_PRESETS).join(', ')}) or a claude-* model id.`,
+    `Unknown model "${requested}". Use a preset (${Object.keys(MODEL_PRESETS).join(', ')}, gemini) or a claude-* model id.`,
   );
 }
 
