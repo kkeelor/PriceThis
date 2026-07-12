@@ -21,12 +21,21 @@ import type { CameraScreenProps } from '@/navigation/types';
 import { spacing, typography } from '@/theme';
 import type { ThemeColors } from '@/theme/types';
 import { arrayBufferToBase64 } from '@/utils/base64';
-import { computeOneXZoom, estimateOneXZoom } from '@/utils/cameraZoom';
+import { computeOneXZoom, resolveDefaultZoom } from '@/utils/cameraZoom';
+
+function waitForNextFrame(): Promise<void> {
+  return new Promise(resolve => {
+    requestAnimationFrame(() => {
+      requestAnimationFrame(() => resolve());
+    });
+  });
+}
 
 export function CameraScreen({ navigation }: CameraScreenProps) {
   const { colors } = useTheme();
   const styles = createStyles(colors);
   const cameraRef = useRef<CameraRef>(null);
+  const isCapturingRef = useRef(false);
   const device = useCameraDevice('back');
   const photoOutput = usePhotoOutput({
     targetResolution: CommonResolutions.HD_16_9,
@@ -46,30 +55,48 @@ export function CameraScreen({ navigation }: CameraScreenProps) {
   });
 
   useEffect(() => {
-    if (!device) {
-      return;
-    }
-
-    const estimated = estimateOneXZoom(device);
-    setOneXZoom(estimated);
-    setZoom(estimated);
-    setZoomLimits({ min: device.minZoom, max: device.maxZoom });
-  }, [device]);
-
-  useEffect(() => {
     if (!hasPermission) {
       void requestPermission();
     }
   }, [hasPermission, requestPermission]);
+
+  const applyDefaultZoom = useCallback(async () => {
+    const controller = cameraRef.current?.controller;
+    if (!controller) {
+      return;
+    }
+
+    const reference = computeOneXZoom(controller);
+    const targetZoom = resolveDefaultZoom(controller);
+    await controller.setZoom(targetZoom);
+    await waitForNextFrame();
+
+    const settledReference = computeOneXZoom(controller);
+    const oneX = settledReference > 0 ? settledReference : reference;
+
+    setOneXZoom(oneX);
+    setZoom(controller.zoom);
+    setZoomLimits({
+      min: oneX,
+      max: controller.maxZoom,
+    });
+  }, []);
 
   const handleClose = useCallback(() => {
     navigation.goBack();
   }, [navigation]);
 
   const handleScan = useCallback(async () => {
-    if (!isReady || isScanning) {
+    if (!isReady || isScanning || isCapturingRef.current) {
       return;
     }
+
+    const controller = cameraRef.current?.controller;
+    if (!controller?.isConnected) {
+      return;
+    }
+
+    isCapturingRef.current = true;
 
     try {
       const photo = await photoOutput.capturePhoto({}, {});
@@ -85,6 +112,8 @@ export function CameraScreen({ navigation }: CameraScreenProps) {
       const message =
         captureError instanceof Error ? captureError.message : 'Could not capture photo';
       Alert.alert('Capture failed', message);
+    } finally {
+      isCapturingRef.current = false;
     }
   }, [isReady, isScanning, photoOutput, runImageScan]);
 
@@ -96,21 +125,19 @@ export function CameraScreen({ navigation }: CameraScreenProps) {
   });
 
   const handlePreviewStarted = useCallback(() => {
-    const controller = cameraRef.current?.controller;
-    if (controller) {
-      const oneX = computeOneXZoom(controller);
-      setOneXZoom(oneX);
-      setZoomLimits({ min: controller.minZoom, max: controller.maxZoom });
-      setZoom(oneX);
-      void controller.setZoom(oneX);
-    }
-    setIsReady(true);
-  }, []);
+    void applyDefaultZoom().finally(() => {
+      setIsReady(true);
+    });
+  }, [applyDefaultZoom]);
 
-  const handleZoomChange = useCallback((nextZoom: number) => {
-    setZoom(nextZoom);
-    void cameraRef.current?.controller?.setZoom(nextZoom);
-  }, []);
+  const handleZoomChange = useCallback(
+    (nextZoom: number) => {
+      const clamped = Math.min(zoomLimits.max, Math.max(zoomLimits.min, nextZoom));
+      setZoom(clamped);
+      void cameraRef.current?.controller?.setZoom(clamped);
+    },
+    [zoomLimits.max, zoomLimits.min],
+  );
 
   if (!hasPermission) {
     return (
@@ -147,7 +174,6 @@ export function CameraScreen({ navigation }: CameraScreenProps) {
         device={device}
         isActive={!isScanning}
         outputs={[photoOutput]}
-        zoom={zoom}
         onPreviewStarted={handlePreviewStarted}
       />
 

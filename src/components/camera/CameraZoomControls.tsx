@@ -21,13 +21,18 @@ type CameraZoomControlsProps = {
 
 const THUMB_SIZE = 22;
 const TRACK_HEIGHT = 4;
+const MIN_DISPLAY_ZOOM = 1;
 
-function clampZoom(value: number, minZoom: number, maxZoom: number): number {
-  return Math.min(maxZoom, Math.max(minZoom, value));
+function clamp(value: number, min: number, max: number): number {
+  return Math.min(max, Math.max(min, value));
 }
 
-function zoomFromRatio(ratio: number, minZoom: number, maxZoom: number): number {
-  const clamped = Math.max(0, Math.min(1, ratio));
+function zoomFromRatio(
+  ratio: number,
+  minZoom: number,
+  maxZoom: number,
+): number {
+  const clamped = clamp(ratio, 0, 1);
   return minZoom + clamped * (maxZoom - minZoom);
 }
 
@@ -50,7 +55,9 @@ export function CameraZoomControls({
   const trackWidthRef = useRef(0);
 
   const displayFactor = toDisplayZoomFactor(zoom, oneXZoom);
-  const thumbOffset = ratioFromZoom(zoom, minZoom, maxZoom) * Math.max(trackWidth - THUMB_SIZE, 0);
+  const maxDisplayFactor = toDisplayZoomFactor(maxZoom, oneXZoom);
+  const thumbOffset =
+    ratioFromZoom(zoom, minZoom, maxZoom) * Math.max(trackWidth - THUMB_SIZE, 0);
 
   const applyZoomAtX = useCallback(
     (x: number) => {
@@ -59,7 +66,7 @@ export function CameraZoomControls({
       }
 
       const ratio = x / trackWidthRef.current;
-      onZoomChange(clampZoom(zoomFromRatio(ratio, minZoom, maxZoom), minZoom, maxZoom));
+      onZoomChange(zoomFromRatio(ratio, minZoom, maxZoom));
     },
     [maxZoom, minZoom, onZoomChange],
   );
@@ -76,7 +83,7 @@ export function CameraZoomControls({
           applyZoomAtX(event.nativeEvent.locationX);
         },
       }),
-    [applyZoomAtX, disabled, zoom],
+    [applyZoomAtX, disabled],
   );
 
   const handleTrackLayout = useCallback((event: LayoutChangeEvent) => {
@@ -85,7 +92,7 @@ export function CameraZoomControls({
     setTrackWidth(width);
   }, []);
 
-  if (maxZoom <= minZoom) {
+  if (maxZoom <= minZoom || oneXZoom <= 0) {
     return null;
   }
 
@@ -115,7 +122,9 @@ export function CameraZoomControls({
           ]}
         />
       </View>
-      <AppText style={styles.edgeLabel}>{formatDisplayZoomLabel(toDisplayZoomFactor(maxZoom, oneXZoom))}</AppText>
+      <AppText style={styles.edgeLabel}>
+        {formatDisplayZoomLabel(Math.max(maxDisplayFactor, MIN_DISPLAY_ZOOM))}
+      </AppText>
     </View>
   );
 }

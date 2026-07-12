@@ -1,32 +1,21 @@
 import type { CameraController } from 'react-native-vision-camera';
-import type { CameraDevice } from 'react-native-vision-camera';
 
-export function estimateOneXZoom(device: CameraDevice): number {
-  const { minZoom, maxZoom, zoomLensSwitchFactors } = device;
-
-  if (zoomLensSwitchFactors.length > 0) {
-    const candidates = [...zoomLensSwitchFactors]
-      .filter(zoom => zoom >= minZoom && zoom <= maxZoom)
-      .sort((a, b) => a - b);
-
-    const standardWide = candidates.find(zoom => zoom > minZoom + 0.01) ?? candidates[0];
-    if (standardWide != null) {
-      return standardWide;
-    }
-  }
-
-  return minZoom;
-}
-
+/** Raw zoom value that corresponds to 1× display for this controller. */
 export function computeOneXZoom(controller: CameraController): number {
-  const { zoom, displayableZoomFactor, minZoom, maxZoom } = controller;
+  const { zoom, displayableZoomFactor } = controller;
 
   if (!Number.isFinite(displayableZoomFactor) || displayableZoomFactor <= 0) {
-    return minZoom;
+    return zoom;
   }
 
-  const target = zoom / displayableZoomFactor;
-  return Math.min(maxZoom, Math.max(minZoom, target));
+  return zoom / displayableZoomFactor;
+}
+
+/** Raw zoom to apply so the preview starts at ~1× display. */
+export function resolveDefaultZoom(controller: CameraController): number {
+  const oneX = computeOneXZoom(controller);
+  const { minZoom, maxZoom } = controller;
+  return Math.min(maxZoom, Math.max(minZoom, oneX));
 }
 
 export function toDisplayZoomFactor(zoom: number, oneXZoom: number): number {
@@ -34,6 +23,16 @@ export function toDisplayZoomFactor(zoom: number, oneXZoom: number): number {
     return zoom;
   }
   return zoom / oneXZoom;
+}
+
+export function rawZoomFromDisplayFactor(
+  displayFactor: number,
+  oneXZoom: number,
+  minZoom: number,
+  maxZoom: number,
+): number {
+  const raw = displayFactor * oneXZoom;
+  return Math.min(maxZoom, Math.max(minZoom, raw));
 }
 
 export function formatDisplayZoomLabel(displayFactor: number): string {
