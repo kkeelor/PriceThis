@@ -23,7 +23,10 @@ export type ScanApiResponse = {
   objectName: string;
   estimatedValue: number;
   currencyCode: string;
+  /** Conservative UI score: min(identification, valuation). */
   confidence: number;
+  identificationConfidence?: number;
+  valuationConfidence?: number;
   wowInsight: string;
   alternativeMatches: Array<{ name: string; confidence: number }>;
   explanation: RecognitionExplanation;

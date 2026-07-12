@@ -1,9 +1,9 @@
 import type { VercelRequest, VercelResponse } from '@vercel/node';
 
-import { scanImageWithClaude } from '../../lib/claude.js';
 import { buildProductListings } from '../../lib/listings.js';
 import { getMarketContextForImageLabel } from '../../lib/market-data.js';
-import { getRequestedModel, withModelMeta } from '../../lib/request-model.js';
+import { getRequestedModel, withScanMeta } from '../../lib/request-model.js';
+import { runImageScanPipeline } from '../../lib/scan-pipeline.js';
 import type { ScanImageRequest } from '../../lib/types.js';
 
 export default async function handler(req: VercelRequest, res: VercelResponse) {
@@ -19,7 +19,7 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
 
     const requestedModel = getRequestedModel(req, body);
     const marketContext = await getMarketContextForImageLabel();
-    const result = await scanImageWithClaude({
+    const { result, pipeline } = await runImageScanPipeline({
       imageBase64: body.imageBase64,
       locale: body.locale,
       currencyCode: body.currencyCode,
@@ -29,12 +29,13 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
     });
 
     return res.status(200).json(
-      withModelMeta(
+      withScanMeta(
         {
           ...result,
           listings: buildProductListings(result.objectName, body.locale),
         },
         requestedModel,
+        pipeline,
       ),
     );
   } catch (error) {

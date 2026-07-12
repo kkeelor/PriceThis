@@ -57,6 +57,8 @@ export type ScanResult = {
   estimatedValue: number;
   currencyCode: string;
   confidence: number;
+  identificationConfidence?: number;
+  valuationConfidence?: number;
   wowInsight: string;
   heroImageUri?: string;
   alternativeMatches: RecognitionMatch[];

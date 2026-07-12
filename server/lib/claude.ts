@@ -1,8 +1,9 @@
 import Anthropic from '@anthropic-ai/sdk';
 
 import { resolveModel } from './models.js';
+import { normalizeScanResponse } from './scan-gates.js';
 import type { ScanApiResponse } from './types.js';
-import { buildWebSearchTools, isWebSearchEnabled } from './web-search.js';
+import { buildWebSearchTools } from './web-search.js';
 
 function getClient(): Anthropic {
   const apiKey = process.env.ANTHROPIC_API_KEY;
@@ -17,6 +18,8 @@ const responseSchema = `{
   "objectName": "string",
   "estimatedValue": number,
   "currencyCode": "string",
+  "identificationConfidence": number,
+  "valuationConfidence": number,
   "confidence": number,
   "wowInsight": "string",
   "alternativeMatches": [{ "name": "string", "confidence": number }],
@@ -34,9 +37,9 @@ const responseSchema = `{
 function buildSystemPrompt(
   currencyCode: string,
   locale: string,
-  webSearchEnabled: boolean,
+  enableWebSearch: boolean,
 ): string {
-  const searchRules = webSearchEnabled
+  const searchRules = enableWebSearch
     ? `- Before estimating value, search for current resale and retail prices for this object in the user's market (${locale}).
 - Prefer local listings and marketplaces relevant to the region. Use resale/used prices when condition is unclear.
 - Return estimatedValue in ${currencyCode}. If sources use another currency, convert using current rates.
@@ -49,8 +52,11 @@ function buildSystemPrompt(
 Rules:
 - Never claim certainty. Use phrasing like "appears to be" internally but return a clean object name.
 - Return estimated market value in ${currencyCode} for locale ${locale}.
-- confidence is 0-100. If below 70, still return best effort but keep confidence honest.
-- alternativeMatches: max 3, descending confidence.
+- identificationConfidence (0-100): how sure you are about the object name and category.
+- valuationConfidence (0-100): how sure you are about estimatedValue given market knowledge (not identification).
+- confidence: set to min(identificationConfidence, valuationConfidence).
+- Report scores honestly. Low valuationConfidence means you need market data — do not inflate.
+- alternativeMatches: max 3, descending confidence (identification alternatives only).
 - wowInsight: one surprising, respectful, factual sentence users would want to share.
 - curiosityCards: 3-5 most relevant cards only, with concise preview and richer content.
 - explanation.features: 3-5 visual or identifying features.
@@ -68,10 +74,7 @@ function parseResponse(text: string): ScanApiResponse {
 
   const parsed = JSON.parse(text.slice(jsonStart, jsonEnd + 1)) as ScanApiResponse;
 
-  parsed.alternativeMatches = (parsed.alternativeMatches ?? []).slice(0, 3);
-  parsed.curiosityCards = (parsed.curiosityCards ?? []).slice(0, 5);
-
-  return parsed;
+  return normalizeScanResponse(parsed);
 }
 
 function extractFinalText(response: Anthropic.Message): string {
@@ -86,12 +89,13 @@ function extractFinalText(response: Anthropic.Message): string {
   return last.text;
 }
 
-type ScanClaudeParams = {
+export type ScanClaudeParams = {
   locale: string;
   currencyCode: string;
   countryCode?: string;
   marketContext?: string;
   model?: string;
+  enableWebSearch?: boolean;
 };
 
 async function createScanResponse(
@@ -100,13 +104,15 @@ async function createScanResponse(
 ): Promise<ScanApiResponse> {
   const client = getClient();
   const { id: modelId } = resolveModel(params.model);
-  const webSearchEnabled = isWebSearchEnabled();
-  const tools = buildWebSearchTools(params.countryCode, params.locale);
+  const enableWebSearch = params.enableWebSearch ?? false;
+  const tools = enableWebSearch
+    ? buildWebSearchTools(params.countryCode, params.locale)
+    : undefined;
 
   const response = await client.messages.create({
     model: modelId,
-    max_tokens: webSearchEnabled ? 2200 : 1800,
-    system: buildSystemPrompt(params.currencyCode, params.locale, webSearchEnabled),
+    max_tokens: enableWebSearch ? 2200 : 1800,
+    system: buildSystemPrompt(params.currencyCode, params.locale, enableWebSearch),
     messages: [{ role: 'user', content: userContent }],
     ...(tools ? { tools } : {}),
   });
@@ -121,6 +127,7 @@ export async function scanImageWithClaude(params: {
   countryCode?: string;
   marketContext?: string;
   model?: string;
+  enableWebSearch?: boolean;
 }): Promise<ScanApiResponse> {
   const userText = params.marketContext
     ? `Identify this object and estimate value. Market context:\n${params.marketContext}`
@@ -146,10 +153,89 @@ export async function scanTextWithClaude(params: {
   countryCode?: string;
   marketContext?: string;
   model?: string;
+  enableWebSearch?: boolean;
 }): Promise<ScanApiResponse> {
   const userText = params.marketContext
     ? `Object query: ${params.query}\nMarket context:\n${params.marketContext}`
     : `Object query: ${params.query}`;
 
   return createScanResponse(params, userText);
+}
+
+export async function refineImageValuationWithClaude(params: {
+  imageBase64: string;
+  stage1: ScanApiResponse;
+  locale: string;
+  currencyCode: string;
+  countryCode?: string;
+  model?: string;
+}): Promise<ScanApiResponse> {
+  const userText = `The object has been identified as "${params.stage1.objectName}" (category: ${params.stage1.category}).
+Search for current resale and retail prices in the user's market, then return updated JSON with a refreshed estimatedValue and honest confidence.
+Keep the same objectName unless search strongly suggests a correction.`;
+
+  return createScanResponse(
+    { ...params, enableWebSearch: true },
+    [
+      {
+        type: 'image',
+        source: {
+          type: 'base64',
+          media_type: 'image/jpeg',
+          data: params.imageBase64,
+        },
+      },
+      { type: 'text', text: userText },
+    ],
+  );
+}
+
+export async function refineTextValuationWithClaude(params: {
+  query: string;
+  stage1: ScanApiResponse;
+  locale: string;
+  currencyCode: string;
+  countryCode?: string;
+  marketContext?: string;
+  model?: string;
+}): Promise<ScanApiResponse> {
+  const userText = `The object has been identified as "${params.stage1.objectName}" (category: ${params.stage1.category}).
+Search for current resale and retail prices in the user's market, then return updated JSON with a refreshed estimatedValue and honest confidence.
+Keep the same objectName unless search strongly suggests a correction.`;
+
+  return createScanResponse(
+    { ...params, enableWebSearch: true },
+    userText,
+  );
+}
+
+/** Legacy single-shot path: search on if globally enabled. */
+export async function scanImageLegacy(params: {
+  imageBase64: string;
+  locale: string;
+  currencyCode: string;
+  countryCode?: string;
+  marketContext?: string;
+  model?: string;
+}): Promise<ScanApiResponse> {
+  const { isWebSearchEnabled } = await import('./web-search.js');
+  return scanImageWithClaude({
+    ...params,
+    enableWebSearch: isWebSearchEnabled(),
+  });
+}
+
+export async function scanTextLegacy(params: {
+  query: string;
+  locale: string;
+  currencyCode: string;
+  countryCode?: string;
+  marketContext?: string;
+  model?: string;
+}): Promise<ScanApiResponse> {
+  const { isWebSearchEnabled } = await import('./web-search.js');
+  return scanTextWithClaude({
+    ...params,
+    enableWebSearch: isWebSearchEnabled(),
+  });
 }

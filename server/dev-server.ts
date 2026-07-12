@@ -1,12 +1,13 @@
 import http from 'node:http';
 
-import { scanImageWithClaude, scanTextWithClaude } from './lib/claude.js';
 import { listConfiguredModels } from './lib/models.js';
 import { buildProductListings } from './lib/listings.js';
 import { fetchItemImageUrl } from './lib/item-image.js';
 import { getMarketContextForImageLabel } from './lib/market-data.js';
 import { getMarketContextForQuery } from './lib/market-data.js';
-import { getRequestedModel, withModelMeta } from './lib/request-model.js';
+import { getRequestedModel, withScanMeta } from './lib/request-model.js';
+import { isPipelineEnabled } from './lib/scan-gates.js';
+import { runImageScanPipeline, runTextScanPipeline } from './lib/scan-pipeline.js';
 import type { ScanImageRequest, ScanTextRequest } from './lib/types.js';
 import { isWebSearchEnabled } from './lib/web-search.js';
 
@@ -44,6 +45,7 @@ const server = http.createServer(async (req, res) => {
       ok: true,
       claudeConfigured: Boolean(process.env.ANTHROPIC_API_KEY),
       webSearchEnabled: isWebSearchEnabled(),
+      pipelineEnabled: isPipelineEnabled(),
       models: listConfiguredModels(),
     });
   }
@@ -64,7 +66,7 @@ const server = http.createServer(async (req, res) => {
 
       const requestedModel = getRequestedModel(req, body);
       const marketContext = await getMarketContextForQuery(body.query);
-      const result = await scanTextWithClaude({
+      const { result, pipeline } = await runTextScanPipeline({
         query: body.query.trim(),
         locale: body.locale,
         currencyCode: body.currencyCode,
@@ -78,13 +80,14 @@ const server = http.createServer(async (req, res) => {
       return sendJson(
         res,
         200,
-        withModelMeta(
+        withScanMeta(
           {
             ...result,
             heroImageUrl,
             listings: buildProductListings(result.objectName, body.locale),
           },
           requestedModel,
+          pipeline,
         ),
       );
     } catch (error) {
@@ -104,7 +107,7 @@ const server = http.createServer(async (req, res) => {
 
       const requestedModel = getRequestedModel(req, body);
       const marketContext = await getMarketContextForImageLabel();
-      const result = await scanImageWithClaude({
+      const { result, pipeline } = await runImageScanPipeline({
         imageBase64: body.imageBase64,
         locale: body.locale,
         currencyCode: body.currencyCode,
@@ -113,7 +116,7 @@ const server = http.createServer(async (req, res) => {
         model: requestedModel,
       });
 
-      return sendJson(res, 200, withModelMeta(result, requestedModel));
+      return sendJson(res, 200, withScanMeta(result, requestedModel, pipeline));
     } catch (error) {
       const message = error instanceof Error ? error.message : 'Scan failed';
       return sendJson(res, 500, { error: message });

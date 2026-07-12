@@ -157,7 +157,11 @@ export function ResultScreen({ navigation, route }: ResultScreenProps) {
                   {formattedValue}
                 </AppText>
               </View>
-              <ConfidenceBadge confidence={initialResult.confidence} />
+              <ConfidenceBadge
+                confidence={initialResult.confidence}
+                identificationConfidence={initialResult.identificationConfidence}
+                valuationConfidence={initialResult.valuationConfidence}
+              />
             </View>
 
             {saved && favoriteRecord ? (

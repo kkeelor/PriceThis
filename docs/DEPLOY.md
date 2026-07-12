@@ -35,6 +35,11 @@ git push -u origin main
 | `CLAUDE_MODEL_QUALITY` | `claude-opus-4-6` | Preset: `quality` (alias for best quality) |
 | `CLAUDE_WEB_SEARCH` | `true` | Enable Claude web search for price grounding (set `false` to disable) |
 | `WEB_SEARCH_MAX_USES` | `1` | Max searches per scan (cost + latency cap) |
+| `SCAN_PIPELINE` | `true` | Progressive pipeline: Stage 1 without search, then gated search |
+| `SCAN_ID_FAIL_FLOOR` | `50` | Below this identification score → too weak to price (no search) |
+| `SCAN_SEARCH_THRESHOLD` | `70` | Search when **valuation** confidence is below this |
+| `SCAN_CATEGORY_SEARCH_THRESHOLD` | `75` | Stricter search bar for watches, art, cars, etc. |
+| `SCAN_AMBIGUITY_MARGIN` | `15` | Top alt within this of identification → disambiguation, no search |
 | `MARKET_DATA_ENABLED` | `true` | Optional |
 
 After changing env vars, **redeploy** on Vercel.

@@ -22,6 +22,8 @@ export type ScanApiResponse = {
   estimatedValue: number;
   currencyCode: string;
   confidence: number;
+  identificationConfidence?: number;
+  valuationConfidence?: number;
   wowInsight: string;
   alternativeMatches: Array<{ name: string; confidence: number }>;
   explanation: RecognitionExplanation;
@@ -32,5 +34,14 @@ export type ScanApiResponse = {
   meta?: {
     modelId: string;
     preset?: string;
+    pipeline?: {
+      enabled: boolean;
+      stages: string[];
+      idGate: string;
+      valueGate: string;
+      searchUsed: boolean;
+      claudeCalls: number;
+      durationMs: number;
+    };
   };
 };

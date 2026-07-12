@@ -38,6 +38,8 @@ function toScanResult(
     estimatedValue: response.estimatedValue,
     currencyCode: response.currencyCode,
     confidence: response.confidence,
+    identificationConfidence: response.identificationConfidence,
+    valuationConfidence: response.valuationConfidence,
     wowInsight: response.wowInsight,
     heroImageUri,
     alternativeMatches: response.alternativeMatches,

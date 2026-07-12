@@ -6,16 +6,40 @@ import { radii, spacing, typography } from '@/theme';
 import type { ThemeColors } from '@/theme/types';
 
 const LOW_CONFIDENCE = 70;
+const HIGH_CONFIDENCE = 85;
 
-type ConfidenceBadgeProps = {
+type ConfidenceInput = {
   confidence: number;
+  identificationConfidence?: number;
+  valuationConfidence?: number;
 };
 
-export function ConfidenceBadge({ confidence }: ConfidenceBadgeProps) {
+export function getDisplayConfidence({
+  confidence,
+  identificationConfidence,
+  valuationConfidence,
+}: ConfidenceInput): number {
+  if (
+    identificationConfidence !== undefined &&
+    valuationConfidence !== undefined
+  ) {
+    return Math.min(identificationConfidence, valuationConfidence);
+  }
+  return confidence;
+}
+
+type ConfidenceBadgeProps = ConfidenceInput;
+
+export function ConfidenceBadge(props: ConfidenceBadgeProps) {
   const { colors, isDark } = useTheme();
   const styles = createStyles(colors, isDark);
+  const confidence = getDisplayConfidence(props);
   const tone =
-    confidence >= 85 ? 'high' : confidence >= LOW_CONFIDENCE ? 'medium' : 'low';
+    confidence >= HIGH_CONFIDENCE
+      ? 'high'
+      : confidence >= LOW_CONFIDENCE
+        ? 'medium'
+        : 'low';
 
   return (
     <View style={[styles.badge, styles[tone]]}>
@@ -26,8 +50,8 @@ export function ConfidenceBadge({ confidence }: ConfidenceBadgeProps) {
   );
 }
 
-export function isLowConfidence(confidence: number): boolean {
-  return confidence < LOW_CONFIDENCE;
+export function isLowConfidence(input: ConfidenceInput): boolean {
+  return getDisplayConfidence(input) < LOW_CONFIDENCE;
 }
 
 function createStyles(colors: ThemeColors, isDark: boolean) {
