@@ -7,6 +7,7 @@ import {
 } from 'react-native';
 import { Heart } from 'lucide-react-native';
 
+import { AccuracyFeedback } from '@/components/result/AccuracyFeedback';
 import { ResultHeroImage } from '@/components/result/ResultHeroImage';
 import { AlternativeMatches } from '@/components/result/AlternativeMatches';
 import { CuriosityCardItem } from '@/components/result/CuriosityCardItem';
@@ -184,11 +185,11 @@ export function ResultScreen({ navigation, route }: ResultScreenProps) {
             <AppText style={styles.insight}>{initialResult.wowInsight}</AppText>
           </GlassCard>
 
-          {initialResult.explanation.summary ? (
+          {initialResult.explanation?.summary ? (
             <GlassCard>
               <AppText style={styles.sectionLabel}>Why we think so</AppText>
               <AppText style={styles.explanationSummary}>{initialResult.explanation.summary}</AppText>
-              {initialResult.explanation.features.map(feature => (
+              {(initialResult.explanation.features ?? []).map(feature => (
                 <AppText key={feature} style={styles.feature}>
                   • {feature}
                 </AppText>
@@ -197,13 +198,13 @@ export function ResultScreen({ navigation, route }: ResultScreenProps) {
           ) : null}
 
           <AlternativeMatches
-            matches={initialResult.alternativeMatches}
+            matches={initialResult.alternativeMatches ?? []}
             onSelect={handleAlternativeSelect}
           />
 
           <View style={styles.cardsSection}>
             <AppText style={styles.sectionLabel}>Explore deeper</AppText>
-            {initialResult.curiosityCards.map(card => (
+            {(initialResult.curiosityCards ?? []).map(card => (
               <CuriosityCardItem key={card.id} card={card} />
             ))}
           </View>
