@@ -11,7 +11,7 @@ export const MODEL_PRESETS = [
 export type ModelPreset = (typeof MODEL_PRESETS)[number];
 
 export const MODEL_PRESET_LABELS: Record<ModelPreset, string> = {
-  default: 'Default (Haiku)',
+  default: 'Default (Gemini Flash-Lite)',
   haiku: 'Claude Haiku',
   fast: 'Claude Fast',
   gemini: 'Gemini Flash-Lite',
@@ -20,7 +20,7 @@ export const MODEL_PRESET_LABELS: Record<ModelPreset, string> = {
   opus: 'Claude Opus',
 };
 
-export const DEFAULT_MODEL_PRESET: ModelPreset = 'default';
+export const DEFAULT_MODEL_PRESET: ModelPreset = 'gemini';
 
 export function isModelPreset(value: string): value is ModelPreset {
   return MODEL_PRESETS.includes(value as ModelPreset);

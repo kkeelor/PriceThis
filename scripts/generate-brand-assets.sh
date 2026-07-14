@@ -2,14 +2,14 @@
 set -euo pipefail
 
 ROOT="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
-SRC="${ROOT}/logo.png"
+SRC="${ROOT}/logo-new.png"
 IMAGES="${ROOT}/assets/images"
 BRAND="${ROOT}/assets/brand"
 ANDROID_RES="${ROOT}/android/app/src/main/res"
 IOS_ICON="${ROOT}/ios/PriceThis/Images.xcassets/AppIcon.appiconset"
 
 if [[ ! -f "$SRC" ]]; then
-  echo "Missing logo.png at repo root"
+  echo "Missing logo-new.png at repo root"
   exit 1
 fi
 

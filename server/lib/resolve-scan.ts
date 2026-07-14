@@ -15,15 +15,18 @@ function getGeminiModelId(): string {
 }
 
 export function isGeminiPreset(requested?: string): boolean {
-  return requested?.trim().toLowerCase() === GEMINI_PRESET;
+  const normalized = requested?.trim().toLowerCase();
+  return !normalized || normalized === GEMINI_PRESET || normalized === 'default';
 }
 
 export function resolveScanTarget(requested?: string): ResolvedScanTarget {
+  const normalized = requested?.trim().toLowerCase();
+
   if (isGeminiPreset(requested)) {
     return {
       provider: 'gemini',
       modelId: getGeminiModelId(),
-      preset: GEMINI_PRESET,
+      preset: normalized === GEMINI_PRESET ? GEMINI_PRESET : 'default',
     };
   }
 
