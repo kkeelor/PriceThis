@@ -1,14 +1,12 @@
 import { StyleSheet, View } from 'react-native';
 
-import { useTheme } from '@/context/ThemeContext';
 import { useResponsiveLayout } from '@/hooks/useResponsiveLayout';
-import { radii } from '@/theme';
+import { radii, viewfinderCorners } from '@/theme';
 
 const CORNER = 28;
 const THICKNESS = 3;
 
 export function CameraViewfinder() {
-  const { colors } = useTheme();
   const { isShort, isCompact } = useResponsiveLayout();
   const pad = isShort || isCompact ? 28 : 48;
   const maxHeight = isShort ? '56%' : '70%';
@@ -16,10 +14,34 @@ export function CameraViewfinder() {
   return (
     <View style={[styles.container, { padding: pad }]} pointerEvents="none">
       <View style={[styles.frame, { maxHeight }]}>
-        <View style={[styles.corner, styles.topLeft, { borderColor: colors.accent }]} />
-        <View style={[styles.corner, styles.topRight, { borderColor: colors.accent }]} />
-        <View style={[styles.corner, styles.bottomLeft, { borderColor: colors.accent }]} />
-        <View style={[styles.corner, styles.bottomRight, { borderColor: colors.accent }]} />
+        <View
+          style={[
+            styles.corner,
+            styles.topLeft,
+            { borderColor: viewfinderCorners.topLeft },
+          ]}
+        />
+        <View
+          style={[
+            styles.corner,
+            styles.topRight,
+            { borderColor: viewfinderCorners.topRight },
+          ]}
+        />
+        <View
+          style={[
+            styles.corner,
+            styles.bottomLeft,
+            { borderColor: viewfinderCorners.bottomLeft },
+          ]}
+        />
+        <View
+          style={[
+            styles.corner,
+            styles.bottomRight,
+            { borderColor: viewfinderCorners.bottomRight },
+          ]}
+        />
       </View>
     </View>
   );

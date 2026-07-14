@@ -5,7 +5,9 @@ export type ThemeColors = {
   surface: string;
   surfaceElevated: string;
   border: string;
+  /** @deprecated Prefer borderAccent — kept as alias during migration */
   borderGold: string;
+  borderAccent: string;
   textPrimary: string;
   textSecondary: string;
   textMuted: string;
@@ -13,6 +15,8 @@ export type ThemeColors = {
   accentLight: string;
   accentDark: string;
   accentSoft: string;
+  accentMagenta: string;
+  valueAccent: string;
   textOnAccent: string;
   success: string;
   warning: string;
@@ -21,4 +25,12 @@ export type ThemeColors = {
   overlay: string;
   dangerSoft: string;
   shadow: string;
+};
+
+/** Logo spectrum stops — gold → magenta → violet → teal */
+export type BrandStops = {
+  gold: string;
+  magenta: string;
+  violet: string;
+  teal: string;
 };

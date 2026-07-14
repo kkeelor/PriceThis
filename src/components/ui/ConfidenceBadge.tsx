@@ -75,25 +75,31 @@ function createStyles(colors: ThemeColors, isDark: boolean) {
       maxWidth: '100%',
     },
     high: {
-      backgroundColor: 'rgba(74, 222, 128, 0.12)',
-      borderColor: 'rgba(74, 222, 128, 0.35)',
+      backgroundColor: colors.accentSoft,
+      borderColor: isDark ? colors.borderAccent : colors.borderAccent,
     },
     highLabel: {
-      color: colors.success,
-    },
-    medium: {
-      backgroundColor: colors.accentSoft,
-      borderColor: isDark ? colors.borderGold : colors.border,
-    },
-    mediumLabel: {
       color: colors.accent,
     },
+    medium: {
+      backgroundColor: isDark
+        ? 'rgba(255, 176, 32, 0.14)'
+        : 'rgba(199, 138, 0, 0.1)',
+      borderColor: isDark
+        ? 'rgba(255, 176, 32, 0.35)'
+        : 'rgba(199, 138, 0, 0.3)',
+    },
+    mediumLabel: {
+      color: colors.valueAccent,
+    },
     low: {
-      backgroundColor: 'rgba(251, 191, 36, 0.12)',
-      borderColor: 'rgba(251, 191, 36, 0.35)',
+      backgroundColor: colors.dangerSoft,
+      borderColor: isDark
+        ? 'rgba(224, 122, 106, 0.35)'
+        : 'rgba(201, 52, 42, 0.25)',
     },
     lowLabel: {
-      color: colors.warning,
+      color: colors.danger,
     },
   });
 }

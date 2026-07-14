@@ -1,14 +1,17 @@
+import { useState } from 'react';
 import {
   Pressable,
   PressableProps,
   StyleSheet,
   Text,
   TextProps,
+  View,
   ViewStyle,
 } from 'react-native';
 
+import { SpectrumFill } from '@/components/brand/Spectrum';
 import { useTheme } from '@/context/ThemeContext';
-import { spacing, typography } from '@/theme';
+import { brandStops, spacing, typography } from '@/theme';
 import type { ThemeColors } from '@/theme/types';
 
 type ButtonVariant = 'primary' | 'secondary' | 'ghost';
@@ -29,11 +32,25 @@ export function Button({
 }: ButtonProps) {
   const { colors, isDark } = useTheme();
   const styles = createStyles(colors, isDark);
+  const [size, setSize] = useState({ width: 0, height: 0 });
+  const isPrimary = variant === 'primary';
 
   return (
     <Pressable
       accessibilityRole="button"
       disabled={disabled}
+      onLayout={
+        isPrimary
+          ? event => {
+              const { width, height } = event.nativeEvent.layout;
+              setSize(prev =>
+                prev.width === width && prev.height === height
+                  ? prev
+                  : { width, height },
+              );
+            }
+          : undefined
+      }
       style={({ pressed }) => [
         styles.base,
         styles[variant],
@@ -43,7 +60,27 @@ export function Button({
         style as ViewStyle,
       ]}
       {...props}>
-      <Text style={[styles.label, styles[`${variant}Label` as const]]} numberOfLines={1} adjustsFontSizeToFit minimumFontScale={0.85}>
+      {isPrimary ? (
+        size.width > 0 ? (
+          <View style={StyleSheet.absoluteFill} pointerEvents="none">
+            <SpectrumFill
+              width={size.width}
+              height={size.height}
+              borderRadius={16}
+            />
+          </View>
+        ) : (
+          <View
+            style={[StyleSheet.absoluteFill, styles.primaryFallback]}
+            pointerEvents="none"
+          />
+        )
+      ) : null}
+      <Text
+        style={[styles.label, styles[`${variant}Label` as const]]}
+        numberOfLines={1}
+        adjustsFontSizeToFit
+        minimumFontScale={0.85}>
         {label}
       </Text>
     </Pressable>
@@ -65,21 +102,32 @@ function createStyles(colors: ThemeColors, isDark: boolean) {
       justifyContent: 'center',
       paddingHorizontal: spacing.lg,
       maxWidth: '100%',
+      overflow: 'hidden',
     },
     fullWidth: {
       alignSelf: 'stretch',
     },
     primary: {
-      backgroundColor: colors.accent,
+      backgroundColor: 'transparent',
       ...(isDark
-        ? {}
+        ? {
+            shadowColor: brandStops.violet,
+            shadowOffset: { width: 0, height: 6 },
+            shadowOpacity: 0.35,
+            shadowRadius: 12,
+            elevation: 6,
+          }
         : {
             shadowColor: colors.shadow,
             shadowOffset: { width: 0, height: 2 },
-            shadowOpacity: 0.12,
-            shadowRadius: 6,
-            elevation: 2,
+            shadowOpacity: 0.14,
+            shadowRadius: 8,
+            elevation: 3,
           }),
+    },
+    primaryFallback: {
+      backgroundColor: colors.accent,
+      borderRadius: 16,
     },
     secondary: {
       backgroundColor: colors.surfaceElevated,
@@ -101,6 +149,7 @@ function createStyles(colors: ThemeColors, isDark: boolean) {
       ...typography.bodyStrong,
       textAlign: 'center',
       maxWidth: '100%',
+      zIndex: 1,
     },
     primaryLabel: {
       color: colors.textOnAccent,

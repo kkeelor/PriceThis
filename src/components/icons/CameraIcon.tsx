@@ -5,7 +5,7 @@ type CameraIconProps = {
   color?: string;
 };
 
-export function CameraIcon({ size = 28, color = '#FFFBF2' }: CameraIconProps) {
+export function CameraIcon({ size = 28, color = '#F4F6FB' }: CameraIconProps) {
   const bodyW = size;
   const bodyH = size * 0.72;
   const lens = size * 0.34;

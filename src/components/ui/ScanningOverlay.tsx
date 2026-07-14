@@ -9,6 +9,7 @@ import Animated, {
   withTiming,
 } from 'react-native-reanimated';
 
+import { SpectrumFill, SpectrumRing } from '@/components/brand/Spectrum';
 import { AppText } from '@/components/ui/Button';
 import { useTheme } from '@/context/ThemeContext';
 import { radii, spacing, typography } from '@/theme';
@@ -18,6 +19,9 @@ type ScanningOverlayProps = {
   visible: boolean;
   message?: string;
 };
+
+const RING_SIZE = 72;
+const CORE_SIZE = 16;
 
 export function ScanningOverlay({
   visible,
@@ -61,8 +65,16 @@ export function ScanningOverlay({
       <View style={styles.backdrop}>
         <View style={styles.card}>
           <View style={styles.ringContainer}>
-            <Animated.View style={[styles.ring, ringStyle]} />
-            <View style={styles.core} />
+            <Animated.View style={[styles.ringWrap, ringStyle]}>
+              <SpectrumRing size={RING_SIZE} strokeWidth={3} />
+            </Animated.View>
+            <View style={styles.core}>
+              <SpectrumFill
+                width={CORE_SIZE}
+                height={CORE_SIZE}
+                borderRadius={CORE_SIZE / 2}
+              />
+            </View>
           </View>
           <AppText style={styles.message}>{message}</AppText>
           <AppText style={styles.subtitle}>Finding value and surprises…</AppText>
@@ -93,24 +105,21 @@ function createStyles(colors: ThemeColors) {
       borderColor: colors.border,
     },
     ringContainer: {
-      width: 72,
-      height: 72,
+      width: RING_SIZE,
+      height: RING_SIZE,
       alignItems: 'center',
       justifyContent: 'center',
     },
-    ring: {
+    ringWrap: {
       position: 'absolute',
-      width: 72,
-      height: 72,
-      borderRadius: 36,
-      borderWidth: 3,
-      borderColor: colors.accent,
+      width: RING_SIZE,
+      height: RING_SIZE,
     },
     core: {
-      width: 16,
-      height: 16,
-      borderRadius: 8,
-      backgroundColor: colors.accent,
+      width: CORE_SIZE,
+      height: CORE_SIZE,
+      borderRadius: CORE_SIZE / 2,
+      overflow: 'hidden',
     },
     message: {
       ...typography.bodyStrong,

@@ -180,7 +180,7 @@ function createStyles(
       backgroundColor: colors.surface,
     },
     themeOptionSelected: {
-      borderColor: isDark ? colors.borderGold : colors.accent,
+      borderColor: isDark ? colors.borderAccent : colors.accent,
       backgroundColor: colors.accentSoft,
     },
     themeLabel: {

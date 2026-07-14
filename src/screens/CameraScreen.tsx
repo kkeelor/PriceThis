@@ -295,7 +295,7 @@ function createStyles(colors: ThemeColors) {
     },
     hint: {
       ...typography.caption,
-      color: '#F7F3EA',
+      color: '#F4F6FB',
       textAlign: 'center',
       backgroundColor: 'rgba(0, 0, 0, 0.55)',
       paddingHorizontal: spacing.md,

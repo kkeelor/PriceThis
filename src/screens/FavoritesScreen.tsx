@@ -166,7 +166,7 @@ function createStyles(colors: ThemeColors, isDark: boolean, isCompact: boolean) 
     },
     title: {
       ...typography.title,
-      color: isDark ? colors.accentLight : colors.textPrimary,
+      color: colors.textPrimary,
       flex: 1,
       minWidth: 0,
     },
@@ -203,7 +203,7 @@ function createStyles(colors: ThemeColors, isDark: boolean, isCompact: boolean) 
     },
     portfolioCard: {
       gap: spacing.xs,
-      borderColor: isDark ? colors.borderGold : colors.border,
+      borderColor: isDark ? colors.borderAccent : colors.border,
     },
     portfolioLabel: {
       ...typography.label,
@@ -213,7 +213,7 @@ function createStyles(colors: ThemeColors, isDark: boolean, isCompact: boolean) 
     },
     portfolioValue: {
       ...typography.hero,
-      color: isDark ? colors.accentLight : colors.textPrimary,
+      color: colors.valueAccent,
       fontSize: isCompact ? 30 : 34,
       lineHeight: isCompact ? 34 : 38,
     },

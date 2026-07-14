@@ -146,7 +146,7 @@ const styles = StyleSheet.create({
   },
   label: {
     ...typography.caption,
-    color: '#F7F3EA',
+    color: '#F4F6FB',
     fontWeight: '700',
     minWidth: 28,
     flexShrink: 0,
@@ -154,7 +154,7 @@ const styles = StyleSheet.create({
   },
   edgeLabel: {
     ...typography.caption,
-    color: 'rgba(247, 243, 234, 0.65)',
+    color: 'rgba(244, 246, 251, 0.65)',
     minWidth: 24,
     flexShrink: 0,
     textAlign: 'right',
@@ -177,7 +177,7 @@ const styles = StyleSheet.create({
   fill: {
     height: TRACK_HEIGHT,
     borderRadius: TRACK_HEIGHT / 2,
-    backgroundColor: 'rgba(247, 243, 234, 0.85)',
+    backgroundColor: 'rgba(244, 246, 251, 0.85)',
   },
   thumb: {
     position: 'absolute',
@@ -185,7 +185,7 @@ const styles = StyleSheet.create({
     width: THUMB_SIZE,
     height: THUMB_SIZE,
     borderRadius: THUMB_SIZE / 2,
-    backgroundColor: '#F7F3EA',
+    backgroundColor: '#F4F6FB',
     borderWidth: 2,
     borderColor: 'rgba(0, 0, 0, 0.25)',
   },

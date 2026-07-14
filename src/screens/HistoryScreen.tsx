@@ -15,9 +15,9 @@ import { radii, spacing, typography } from '@/theme';
 import type { ThemeColors } from '@/theme/types';
 
 export function HistoryScreen({ navigation }: HistoryScreenProps) {
-  const { colors, isDark } = useTheme();
+  const { colors } = useTheme();
   const { contentFrameStyle } = useResponsiveLayout();
-  const styles = createStyles(colors, isDark);
+  const styles = createStyles(colors);
   const { scans, refresh, deleteScan, clearAll } = useRecentScans();
   const [refreshing, setRefreshing] = useState(false);
   const [clearConfirmOpen, setClearConfirmOpen] = useState(false);
@@ -118,7 +118,7 @@ export function HistoryScreen({ navigation }: HistoryScreenProps) {
   );
 }
 
-function createStyles(colors: ThemeColors, isDark: boolean) {
+function createStyles(colors: ThemeColors) {
   return StyleSheet.create({
     scroll: {
       paddingBottom: spacing.xxl,
@@ -137,7 +137,7 @@ function createStyles(colors: ThemeColors, isDark: boolean) {
     },
     title: {
       ...typography.title,
-      color: isDark ? colors.accentLight : colors.textPrimary,
+      color: colors.textPrimary,
       flex: 1,
       minWidth: 0,
     },

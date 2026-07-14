@@ -114,7 +114,7 @@ function createStyles(colors: ThemeColors, width: number) {
     },
     tapHintText: {
       ...typography.caption,
-      color: '#F7F3EA',
+      color: '#F4F6FB',
     },
     placeholder: {
       width: '100%',

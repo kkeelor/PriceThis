@@ -1,10 +1,15 @@
-import { useCallback, useRef, useState } from 'react';
+import { useCallback, useEffect, useRef, useState } from 'react';
 import {
   Pressable,
   ScrollView,
   StyleSheet,
   View,
 } from 'react-native';
+import Animated, {
+  useAnimatedStyle,
+  useSharedValue,
+  withTiming,
+} from 'react-native-reanimated';
 import { Heart } from 'lucide-react-native';
 
 import { AccuracyFeedback } from '@/components/result/AccuracyFeedback';
@@ -48,6 +53,16 @@ export function ResultScreen({ navigation, route }: ResultScreenProps) {
   const styles = createStyles(colors, isCompact);
   const { result: initialResult } = route.params;
   const shareCardRef = useRef<View>(null);
+  const valueOpacity = useSharedValue(0);
+
+  useEffect(() => {
+    valueOpacity.value = withTiming(1, { duration: 400 });
+  }, [initialResult.id, valueOpacity]);
+
+  const valueAnimStyle = useAnimatedStyle(() => ({
+    opacity: valueOpacity.value,
+  }));
+
   const {
     categories,
     isFavorite,
@@ -148,8 +163,8 @@ export function ResultScreen({ navigation, route }: ResultScreenProps) {
               onLongPress={() => setCategoryPickerOpen(true)}
               style={styles.heartButton}>
               <Heart
-                color={saved ? colors.danger : colors.textMuted}
-                fill={saved ? colors.danger : 'transparent'}
+                color={saved ? colors.accentMagenta : colors.textMuted}
+                fill={saved ? colors.accentMagenta : 'transparent'}
                 size={22}
                 strokeWidth={2}
               />
@@ -182,13 +197,15 @@ export function ResultScreen({ navigation, route }: ResultScreenProps) {
             <View style={styles.valueRow}>
               <View style={styles.valueBlock}>
                 <AppText style={styles.valueLabel}>Worth about</AppText>
-                <AppText
-                  style={styles.value}
-                  numberOfLines={1}
-                  adjustsFontSizeToFit
-                  minimumFontScale={0.7}>
-                  {formattedValue}
-                </AppText>
+                <Animated.View style={valueAnimStyle}>
+                  <AppText
+                    style={styles.value}
+                    numberOfLines={1}
+                    adjustsFontSizeToFit
+                    minimumFontScale={0.7}>
+                    {formattedValue}
+                  </AppText>
+                </Animated.View>
               </View>
               <ConfidenceBadge
                 confidence={initialResult.confidence}
@@ -343,7 +360,7 @@ function createStyles(colors: ThemeColors, isCompact: boolean) {
     },
     value: {
       ...typography.hero,
-      color: colors.textPrimary,
+      color: colors.valueAccent,
       fontSize: isCompact ? 30 : 34,
       lineHeight: isCompact ? 34 : 38,
     },

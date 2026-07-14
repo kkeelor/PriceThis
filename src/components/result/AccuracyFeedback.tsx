@@ -86,7 +86,7 @@ function createStyles(colors: ThemeColors, isDark: boolean) {
     },
     choiceSelectedCorrect: {
       borderColor: colors.success,
-      backgroundColor: 'rgba(36, 138, 61, 0.1)',
+      backgroundColor: colors.accentSoft,
     },
     choiceSelectedIncorrect: {
       borderColor: colors.danger,

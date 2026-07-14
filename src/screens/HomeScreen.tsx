@@ -10,6 +10,7 @@ import {
 import { launchImageLibrary } from 'react-native-image-picker';
 
 import { Logo } from '@/components/brand/Logo';
+import { SpectrumFill } from '@/components/brand/Spectrum';
 import { TryExampleChips } from '@/components/home/TryExampleChips';
 import { CameraIcon } from '@/components/icons/CameraIcon';
 import { SettingsMenu } from '@/components/settings/SettingsMenu';
@@ -22,7 +23,7 @@ import { useTheme } from '@/context/ThemeContext';
 import { useResponsiveLayout } from '@/hooks/useResponsiveLayout';
 import { useScan } from '@/hooks/useScan';
 import type { HomeScreenProps } from '@/navigation/types';
-import { spacing, typography } from '@/theme';
+import { brandStops, spacing, typography } from '@/theme';
 import type { ThemeColors } from '@/theme/types';
 
 type ScanMenuAnchor = {
@@ -170,6 +171,12 @@ export function HomeScreen({ navigation }: HomeScreenProps) {
               accessibilityState={{ expanded: scanMenuOpen }}
               onPress={toggleScanMenu}
               style={[styles.cameraButton, scanMenuOpen && styles.cameraButtonActive]}>
+              <SpectrumFill
+                width={cameraButtonSize}
+                height={cameraButtonSize}
+                borderRadius={cameraButtonSize / 2}
+                style={styles.cameraButtonFill}
+              />
               <CameraIcon size={isCompact ? 32 : 36} color={colors.textOnAccent} />
             </Pressable>
           </View>
@@ -231,7 +238,7 @@ function createStyles(colors: ThemeColors, isDark: boolean, cameraButtonSize: nu
     },
     wordmark: {
       ...typography.title,
-      color: isDark ? colors.accentLight : colors.textPrimary,
+      color: colors.textPrimary,
       letterSpacing: -0.4,
     },
     tagline: {
@@ -265,19 +272,21 @@ function createStyles(colors: ThemeColors, isDark: boolean, cameraButtonSize: nu
       width: cameraButtonSize,
       height: cameraButtonSize,
       borderRadius: cameraButtonSize / 2,
-      backgroundColor: colors.accent,
       alignItems: 'center',
       justifyContent: 'center',
-      borderWidth: isDark ? 1 : 0,
-      borderColor: isDark ? colors.borderGold : 'transparent',
-      shadowColor: isDark ? colors.accentDark : colors.shadow,
-      shadowOpacity: isDark ? 0.45 : 0.16,
-      shadowRadius: isDark ? 14 : 10,
+      overflow: 'hidden',
+      shadowColor: isDark ? brandStops.violet : colors.shadow,
+      shadowOpacity: isDark ? 0.45 : 0.18,
+      shadowRadius: isDark ? 16 : 12,
       shadowOffset: { width: 0, height: isDark ? 6 : 4 },
       elevation: 8,
     },
+    cameraButtonFill: {
+      ...StyleSheet.absoluteFill,
+    },
     cameraButtonActive: {
       opacity: 0.92,
+      shadowColor: brandStops.magenta,
     },
     scanMenuBackdrop: {
       flex: 1,
