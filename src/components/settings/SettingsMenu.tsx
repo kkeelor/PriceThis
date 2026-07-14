@@ -15,6 +15,7 @@ import { ModelSettingSection } from '@/components/settings/ModelSettingSection';
 import { SettingsIcon } from '@/components/icons/SettingsIcon';
 import { AppText } from '@/components/ui/Button';
 import { useTheme } from '@/context/ThemeContext';
+import { useResponsiveLayout } from '@/hooks/useResponsiveLayout';
 import type { ThemeMode } from '@/theme/types';
 import { radii, spacing, typography } from '@/theme';
 import type { ThemeColors } from '@/theme/types';
@@ -30,8 +31,9 @@ function ThemeModeIcon({ mode, color }: { mode: ThemeMode; color: string }) {
 export function SettingsMenu() {
   const { colors, mode, setMode, isDark } = useTheme();
   const { height: windowHeight } = useWindowDimensions();
+  const { insets, contentMaxWidth, isCompact } = useResponsiveLayout();
   const [open, setOpen] = useState(false);
-  const styles = createStyles(colors, isDark, windowHeight);
+  const styles = createStyles(colors, isDark, windowHeight, insets.bottom, contentMaxWidth);
 
   return (
     <>
@@ -49,7 +51,9 @@ export function SettingsMenu() {
           <Pressable style={StyleSheet.absoluteFill} onPress={() => setOpen(false)} />
           <View style={styles.sheet}>
             <View style={styles.sheetHeader}>
-              <AppText style={styles.title}>Settings</AppText>
+              <AppText style={styles.title} numberOfLines={1} adjustsFontSizeToFit>
+                Settings
+              </AppText>
             </View>
 
             <ScrollView
@@ -58,7 +62,7 @@ export function SettingsMenu() {
               contentContainerStyle={styles.scrollContent}>
               <View style={styles.section}>
                 <AppText style={styles.sectionLabel}>Appearance</AppText>
-                <View style={styles.themeRow}>
+                <View style={[styles.themeRow, isCompact && styles.themeRowCompact]}>
                   {(['light', 'dark'] as ThemeMode[]).map(option => {
                     const selected = mode === option;
                     return (
@@ -90,7 +94,13 @@ export function SettingsMenu() {
   );
 }
 
-function createStyles(colors: ThemeColors, isDark: boolean, windowHeight: number) {
+function createStyles(
+  colors: ThemeColors,
+  isDark: boolean,
+  windowHeight: number,
+  bottomInset: number,
+  contentMaxWidth: number,
+) {
   const sheetMaxHeight = Math.min(windowHeight * 0.82, 720);
 
   return StyleSheet.create({
@@ -117,8 +127,11 @@ function createStyles(colors: ThemeColors, isDark: boolean, windowHeight: number
       flex: 1,
       backgroundColor: colors.overlay,
       justifyContent: 'flex-end',
+      alignItems: 'center',
     },
     sheet: {
+      width: '100%',
+      maxWidth: contentMaxWidth,
       maxHeight: sheetMaxHeight,
       backgroundColor: colors.surfaceElevated,
       borderTopLeftRadius: radii.xl,
@@ -139,7 +152,7 @@ function createStyles(colors: ThemeColors, isDark: boolean, windowHeight: number
     scrollContent: {
       gap: spacing.md,
       paddingHorizontal: spacing.lg,
-      paddingBottom: spacing.xxl,
+      paddingBottom: bottomInset + spacing.xl,
     },
     section: {
       gap: spacing.sm,
@@ -152,8 +165,12 @@ function createStyles(colors: ThemeColors, isDark: boolean, windowHeight: number
       flexDirection: 'row',
       gap: spacing.sm,
     },
+    themeRowCompact: {
+      gap: spacing.xs,
+    },
     themeOption: {
       flex: 1,
+      minWidth: 0,
       alignItems: 'center',
       gap: spacing.xs,
       paddingVertical: spacing.md,

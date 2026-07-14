@@ -75,6 +75,7 @@ function createStyles(colors: ThemeColors, isDark: boolean) {
     },
     triggerText: {
       flex: 1,
+      minWidth: 0,
       gap: 2,
     },
     title: {
@@ -89,6 +90,7 @@ function createStyles(colors: ThemeColors, isDark: boolean) {
       ...typography.caption,
       color: colors.textMuted,
       marginTop: 2,
+      flexShrink: 0,
     },
     content: {
       borderRadius: radii.md,

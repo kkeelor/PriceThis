@@ -88,7 +88,7 @@ export function AppUpdateSection({ active }: AppUpdateSectionProps) {
             pressed && !isBusy && styles.checkButtonPressed,
             isBusy && styles.checkButtonDisabled,
           ]}>
-          <AppText style={styles.checkLabel} numberOfLines={1}>
+          <AppText style={styles.checkLabel} numberOfLines={2}>
             {buttonLabel}
           </AppText>
           {updateAvailable && !isBusy ? (

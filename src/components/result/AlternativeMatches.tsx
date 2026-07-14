@@ -28,7 +28,9 @@ export function AlternativeMatches({ matches, onSelect }: AlternativeMatchesProp
             key={match.name}
             style={styles.chip}
             onPress={() => onSelect(match.name)}>
-            <AppText style={styles.chipText}>{match.name}</AppText>
+            <AppText style={styles.chipText} numberOfLines={2}>
+              {match.name}
+            </AppText>
             <AppText style={styles.chipMeta}>{match.confidence}%</AppText>
           </Pressable>
         ))}
@@ -59,10 +61,13 @@ function createStyles(colors: ThemeColors) {
       paddingHorizontal: spacing.md,
       paddingVertical: spacing.sm,
       gap: 2,
+      maxWidth: '100%',
+      flexShrink: 1,
     },
     chipText: {
       ...typography.caption,
       color: colors.textPrimary,
+      flexShrink: 1,
     },
     chipMeta: {
       ...typography.caption,

@@ -41,7 +41,7 @@ export function FavoriteScanRow({
         <AppText style={styles.name} numberOfLines={1}>
           {scan.objectName}
         </AppText>
-        <AppText style={styles.value}>
+        <AppText style={styles.value} numberOfLines={1}>
           {convertAndFormat(scan.estimatedValue, scan.currencyCode)}
         </AppText>
         <Pressable
@@ -104,6 +104,7 @@ function createStyles(colors: ThemeColors, isDark: boolean) {
     },
     body: {
       flex: 1,
+      minWidth: 0,
       gap: 2,
     },
     name: {

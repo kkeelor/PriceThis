@@ -43,7 +43,11 @@ export function ConfidenceBadge(props: ConfidenceBadgeProps) {
 
   return (
     <View style={[styles.badge, styles[tone]]}>
-      <AppText style={[styles.label, styles[`${tone}Label` as const]]}>
+      <AppText
+        style={[styles.label, styles[`${tone}Label` as const]]}
+        numberOfLines={1}
+        adjustsFontSizeToFit
+        minimumFontScale={0.85}>
         {confidence}% confidence
       </AppText>
     </View>
@@ -62,10 +66,13 @@ function createStyles(colors: ThemeColors, isDark: boolean) {
       paddingHorizontal: spacing.md,
       paddingVertical: spacing.xs,
       borderWidth: 1,
+      maxWidth: '100%',
+      flexShrink: 1,
     },
     label: {
       ...typography.caption,
       fontWeight: '600',
+      maxWidth: '100%',
     },
     high: {
       backgroundColor: 'rgba(74, 222, 128, 0.12)',

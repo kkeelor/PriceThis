@@ -26,6 +26,7 @@ import { Screen } from '@/components/ui/Screen';
 import { useTheme } from '@/context/ThemeContext';
 import { useCurrency } from '@/context/CurrencyContext';
 import { useFavorites } from '@/hooks/useFavorites';
+import { useResponsiveLayout } from '@/hooks/useResponsiveLayout';
 import { useScan } from '@/hooks/useScan';
 import type { ResultScreenProps } from '@/navigation/types';
 import { resolveListings } from '@/services/listings/buildListings';
@@ -38,7 +39,13 @@ import type { ThemeColors } from '@/theme/types';
 export function ResultScreen({ navigation, route }: ResultScreenProps) {
   const { colors } = useTheme();
   const { convertAndFormat } = useCurrency();
-  const styles = createStyles(colors);
+  const {
+    contentFrameStyle,
+    scrollBottomPad,
+    horizontalGutter,
+    isCompact,
+  } = useResponsiveLayout();
+  const styles = createStyles(colors, isCompact);
   const { result: initialResult } = route.params;
   const shareCardRef = useRef<View>(null);
   const {
@@ -119,10 +126,20 @@ export function ResultScreen({ navigation, route }: ResultScreenProps) {
       <ScanningOverlay visible={isScanning} message="Re-estimating value…" />
 
       <ScrollView
-        contentContainerStyle={styles.scroll}
+        contentContainerStyle={{ paddingBottom: scrollBottomPad }}
         showsVerticalScrollIndicator={false}>
-        <View style={styles.header}>
-          <Button label="Back" variant="ghost" onPress={() => navigation.goBack()} />
+        <View
+          style={[
+            styles.header,
+            contentFrameStyle,
+            { paddingHorizontal: horizontalGutter },
+          ]}>
+          <Button
+            label="Back"
+            variant="ghost"
+            onPress={() => navigation.goBack()}
+            style={styles.chromeButton}
+          />
           <View style={styles.headerActions}>
             <Pressable
               accessibilityRole="button"
@@ -137,13 +154,25 @@ export function ResultScreen({ navigation, route }: ResultScreenProps) {
                 strokeWidth={2}
               />
             </Pressable>
-            <Button label="Share" variant="ghost" onPress={() => void handleShare()} />
+            <Button
+              label="Share"
+              variant="ghost"
+              onPress={() => void handleShare()}
+              style={styles.chromeButton}
+            />
           </View>
         </View>
 
-        <ResultHeroImage imageUri={initialResult.heroImageUri} objectName={initialResult.objectName} />
+        <View style={contentFrameStyle}>
+          <ResultHeroImage imageUri={initialResult.heroImageUri} objectName={initialResult.objectName} />
+        </View>
 
-        <View style={styles.body}>
+        <View
+          style={[
+            styles.body,
+            contentFrameStyle,
+            { paddingHorizontal: horizontalGutter },
+          ]}>
           <View style={styles.summary}>
             <AppText style={styles.appears}>This appears to be</AppText>
             <AppText style={styles.objectName} numberOfLines={3}>
@@ -153,7 +182,11 @@ export function ResultScreen({ navigation, route }: ResultScreenProps) {
             <View style={styles.valueRow}>
               <View style={styles.valueBlock}>
                 <AppText style={styles.valueLabel}>Worth about</AppText>
-                <AppText style={styles.value} numberOfLines={1} adjustsFontSizeToFit minimumFontScale={0.7}>
+                <AppText
+                  style={styles.value}
+                  numberOfLines={1}
+                  adjustsFontSizeToFit
+                  minimumFontScale={0.7}>
                   {formattedValue}
                 </AppText>
               </View>
@@ -169,7 +202,7 @@ export function ResultScreen({ navigation, route }: ResultScreenProps) {
                 accessibilityRole="button"
                 onPress={() => setCategoryPickerOpen(true)}
                 style={styles.savedCategory}>
-                <AppText style={styles.savedCategoryText}>
+                <AppText style={styles.savedCategoryText} numberOfLines={2}>
                   Saved in{' '}
                   {categories.find(category => category.id === favoriteRecord.categoryId)?.name ??
                     'General'}
@@ -240,34 +273,40 @@ export function ResultScreen({ navigation, route }: ResultScreenProps) {
   );
 }
 
-function createStyles(colors: ThemeColors) {
+function createStyles(colors: ThemeColors, isCompact: boolean) {
   return StyleSheet.create({
-    scroll: {
-      paddingBottom: spacing.xxl,
-    },
     header: {
       flexDirection: 'row',
       justifyContent: 'space-between',
       alignItems: 'center',
-      paddingHorizontal: spacing.lg,
+      gap: spacing.sm,
       paddingTop: spacing.md,
       marginBottom: spacing.sm,
+      width: '100%',
     },
     headerActions: {
       flexDirection: 'row',
       alignItems: 'center',
       gap: spacing.xs,
+      flexShrink: 1,
+      minWidth: 0,
+    },
+    chromeButton: {
+      minHeight: 44,
+      paddingHorizontal: isCompact ? spacing.sm : spacing.md,
+      flexShrink: 1,
     },
     heartButton: {
       width: 44,
       height: 44,
       alignItems: 'center',
       justifyContent: 'center',
+      flexShrink: 0,
     },
     body: {
-      paddingHorizontal: spacing.lg,
       paddingTop: spacing.lg,
       gap: spacing.lg,
+      width: '100%',
     },
     summary: {
       gap: spacing.xs,
@@ -280,6 +319,8 @@ function createStyles(colors: ThemeColors) {
     },
     objectName: {
       ...typography.title,
+      fontSize: isCompact ? 24 : 28,
+      lineHeight: isCompact ? 30 : 34,
       color: colors.textPrimary,
       flexShrink: 1,
     },
@@ -303,12 +344,13 @@ function createStyles(colors: ThemeColors) {
     value: {
       ...typography.hero,
       color: colors.textPrimary,
-      fontSize: 34,
-      lineHeight: 38,
+      fontSize: isCompact ? 30 : 34,
+      lineHeight: isCompact ? 34 : 38,
     },
     savedCategory: {
       marginTop: spacing.xs,
       alignSelf: 'flex-start',
+      maxWidth: '100%',
     },
     savedCategoryText: {
       ...typography.caption,

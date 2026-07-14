@@ -1,35 +1,29 @@
-import { useCallback, useRef, useState } from 'react';
+import { useCallback, useMemo, useRef, useState } from 'react';
 import {
   Alert,
   Modal,
   Pressable,
-  RefreshControl,
   ScrollView,
   StyleSheet,
-  useWindowDimensions,
   View,
 } from 'react-native';
 import { launchImageLibrary } from 'react-native-image-picker';
 
 import { Logo } from '@/components/brand/Logo';
-import { RecentScanRow } from '@/components/home/RecentScanRow';
 import { TryExampleChips } from '@/components/home/TryExampleChips';
 import { CameraIcon } from '@/components/icons/CameraIcon';
 import { SettingsMenu } from '@/components/settings/SettingsMenu';
 import { AppText, Button } from '@/components/ui/Button';
-import { ConfirmDialog } from '@/components/ui/ConfirmDialog';
 import { GlassCard } from '@/components/ui/GlassCard';
 import { ScanningOverlay } from '@/components/ui/ScanningOverlay';
 import { Screen } from '@/components/ui/Screen';
 import { SearchBar } from '@/components/ui/SearchBar';
 import { useTheme } from '@/context/ThemeContext';
-import { useRecentScans } from '@/hooks/useRecentScans';
+import { useResponsiveLayout } from '@/hooks/useResponsiveLayout';
 import { useScan } from '@/hooks/useScan';
 import type { HomeScreenProps } from '@/navigation/types';
-import { radii, spacing, typography } from '@/theme';
+import { spacing, typography } from '@/theme';
 import type { ThemeColors } from '@/theme/types';
-
-const CAMERA_BUTTON_SIZE = 88;
 
 type ScanMenuAnchor = {
   x: number;
@@ -40,14 +34,20 @@ type ScanMenuAnchor = {
 
 export function HomeScreen({ navigation }: HomeScreenProps) {
   const { colors, isDark } = useTheme();
-  const { width: screenWidth } = useWindowDimensions();
-  const scanMenuWidth = Math.min(screenWidth - spacing.lg * 2, 280);
-  const styles = createStyles(colors, isDark);
+  const {
+    width: screenWidth,
+    height: screenHeight,
+    insets,
+    isCompact,
+    isWide,
+    contentFrameStyle,
+    horizontalGutter,
+  } = useResponsiveLayout();
+  const cameraButtonSize = isWide ? 96 : isCompact ? 80 : 88;
+  const scanMenuWidth = Math.min(screenWidth - horizontalGutter * 2, 280);
+  const styles = createStyles(colors, isDark, cameraButtonSize);
   const cameraAnchorRef = useRef<View>(null);
-  const { scans, refresh, deleteScan, clearAll } = useRecentScans();
-  const [refreshing, setRefreshing] = useState(false);
   const [scanMenuOpen, setScanMenuOpen] = useState(false);
-  const [clearConfirmOpen, setClearConfirmOpen] = useState(false);
   const [scanMenuAnchor, setScanMenuAnchor] = useState<ScanMenuAnchor | null>(null);
   const { isScanning, runImageScan } = useScan({
     onSuccess: result => {
@@ -103,50 +103,48 @@ export function HomeScreen({ navigation }: HomeScreenProps) {
     navigation.navigate('Camera');
   }, [closeScanMenu, navigation]);
 
-  const handleClearAll = useCallback(() => {
-    setClearConfirmOpen(true);
-  }, []);
+  const menuPosition = useMemo(() => {
+    if (!scanMenuAnchor) {
+      return null;
+    }
 
-  const handleConfirmClearAll = useCallback(() => {
-    clearAll();
-    setClearConfirmOpen(false);
-  }, [clearAll]);
+    // Approximate menu height (two buttons + gaps + card padding).
+    const estimatedMenuHeight = 148;
+    const margin = spacing.md;
+    const maxTop =
+      screenHeight - insets.bottom - estimatedMenuHeight - margin;
+    const centeredLeft = Math.min(
+      Math.max(scanMenuAnchor.x + scanMenuAnchor.width / 2 - scanMenuWidth / 2, margin),
+      screenWidth - scanMenuWidth - margin,
+    );
+    const preferredTop =
+      scanMenuAnchor.y + scanMenuAnchor.height / 2 - estimatedMenuHeight / 2;
 
-  const handleRefresh = useCallback(() => {
-    setRefreshing(true);
-    refresh();
-    requestAnimationFrame(() => {
-      setRefreshing(false);
-    });
-  }, [refresh]);
+    return {
+      top: Math.max(insets.top + margin, Math.min(preferredTop, maxTop)),
+      left: centeredLeft,
+      width: scanMenuWidth,
+    };
+  }, [insets.bottom, insets.top, scanMenuAnchor, scanMenuWidth, screenHeight, screenWidth]);
 
   return (
     <Screen>
       <ScanningOverlay visible={isScanning} message="Analyzing your photo…" />
 
-      <View style={styles.topBar}>
+      <View style={[styles.topBar, contentFrameStyle]}>
         <SettingsMenu />
       </View>
 
       <ScrollView
-        contentContainerStyle={styles.scroll}
+        contentContainerStyle={[styles.scroll, contentFrameStyle]}
         showsVerticalScrollIndicator={false}
-        keyboardShouldPersistTaps="handled"
-        refreshControl={
-          <RefreshControl
-            refreshing={refreshing}
-            onRefresh={handleRefresh}
-            tintColor={colors.accent}
-            colors={[colors.accent]}
-            progressBackgroundColor={colors.surface}
-          />
-        }>
+        keyboardShouldPersistTaps="handled">
         <View style={styles.header}>
-          <Logo size="md" shape="circle" style={styles.logoMark} />
+          <Logo size={isWide ? 'lg' : 'md'} shape="circle" style={styles.logoMark} />
           <AppText style={styles.wordmark} numberOfLines={1} adjustsFontSizeToFit>
             PriceThis
           </AppText>
-          <AppText style={styles.tagline} numberOfLines={1}>
+          <AppText style={styles.tagline}>
             The Shazam for prices.
           </AppText>
           <AppText style={styles.helper}>
@@ -172,7 +170,7 @@ export function HomeScreen({ navigation }: HomeScreenProps) {
               accessibilityState={{ expanded: scanMenuOpen }}
               onPress={toggleScanMenu}
               style={[styles.cameraButton, scanMenuOpen && styles.cameraButtonActive]}>
-              <CameraIcon size={36} color={colors.textOnAccent} />
+              <CameraIcon size={isCompact ? 32 : 36} color={colors.textOnAccent} />
             </Pressable>
           </View>
           <AppText style={styles.cameraHint}>Tap to scan or upload</AppText>
@@ -184,19 +182,11 @@ export function HomeScreen({ navigation }: HomeScreenProps) {
           animationType="fade"
           onRequestClose={closeScanMenu}>
           <Pressable style={styles.scanMenuBackdrop} onPress={closeScanMenu}>
-            {scanMenuAnchor ? (
+            {menuPosition ? (
               <Pressable
-                style={[
-                  styles.scanMenuAnchor,
-                  {
-                    top: scanMenuAnchor.y,
-                    left: scanMenuAnchor.x,
-                    width: scanMenuAnchor.width,
-                    height: scanMenuAnchor.height,
-                  },
-                ]}
+                style={[styles.scanMenuAnchor, menuPosition]}
                 onPress={() => {}}>
-                <GlassCard style={[styles.scanMenu, { width: scanMenuWidth }]}>
+                <GlassCard style={styles.scanMenu}>
                   <Button label="Open Camera" fullWidth onPress={handleOpenCamera} />
                   <Button
                     label="Upload from Gallery"
@@ -210,72 +200,25 @@ export function HomeScreen({ navigation }: HomeScreenProps) {
             ) : null}
           </Pressable>
         </Modal>
-
-        <View style={styles.recentSection}>
-          <View style={styles.recentHeader}>
-            <AppText style={styles.sectionLabel}>Recent scans</AppText>
-            {scans.length > 0 ? (
-              <Pressable
-                accessibilityLabel="Delete all recent scans"
-                accessibilityRole="button"
-                onPress={handleClearAll}
-                hitSlop={8}
-                style={styles.clearAllButton}>
-                <AppText style={styles.trashHeaderIcon}>🗑</AppText>
-              </Pressable>
-            ) : null}
-          </View>
-          {scans.length === 0 ? (
-            <GlassCard style={styles.emptyCard}>
-              <AppText style={styles.emptyTitle}>No scans yet</AppText>
-              <AppText style={styles.emptyState}>
-                Tap the camera button above or try an example to discover what things are worth.
-              </AppText>
-            </GlassCard>
-          ) : (
-            <View style={styles.recentList}>
-              {scans.map(item => (
-                <RecentScanRow
-                  key={item.id}
-                  scan={item}
-                  onPress={() => navigation.navigate('Result', { result: item })}
-                  onDelete={() => deleteScan(item.id)}
-                />
-              ))}
-            </View>
-          )}
-        </View>
       </ScrollView>
-
-      <ConfirmDialog
-        visible={clearConfirmOpen}
-        title="Delete all scans?"
-        message={
-          scans.length === 1
-            ? 'This removes 1 saved scan from your history. This cannot be undone.'
-            : `This removes ${scans.length} saved scans from your history. This cannot be undone.`
-        }
-        confirmLabel="Delete all"
-        cancelLabel="Keep scans"
-        destructive
-        onCancel={() => setClearConfirmOpen(false)}
-        onConfirm={handleConfirmClearAll}
-      />
     </Screen>
   );
 }
 
-function createStyles(colors: ThemeColors, isDark: boolean) {
+function createStyles(colors: ThemeColors, isDark: boolean, cameraButtonSize: number) {
   return StyleSheet.create({
     topBar: {
       flexDirection: 'row',
       justifyContent: 'flex-end',
       marginTop: spacing.sm,
       marginBottom: -spacing.md,
+      width: '100%',
     },
     scroll: {
       paddingBottom: spacing.xxl,
       gap: spacing.lg,
+      flexGrow: 1,
+      width: '100%',
     },
     header: {
       marginTop: spacing.md,
@@ -295,29 +238,33 @@ function createStyles(colors: ThemeColors, isDark: boolean) {
       ...typography.body,
       color: colors.textSecondary,
       marginBottom: spacing.md,
+      textAlign: 'center',
     },
     helper: {
       ...typography.caption,
       color: colors.textMuted,
       lineHeight: 20,
       textAlign: 'center',
-      maxWidth: 320,
+      maxWidth: 420,
+      alignSelf: 'center',
+      width: '100%',
     },
     scanSection: {
       alignItems: 'center',
       gap: spacing.sm,
+      marginTop: spacing.xl,
       marginBottom: spacing.lg,
     },
     cameraAnchor: {
-      width: CAMERA_BUTTON_SIZE,
-      height: CAMERA_BUTTON_SIZE,
+      width: cameraButtonSize,
+      height: cameraButtonSize,
       alignItems: 'center',
       justifyContent: 'center',
     },
     cameraButton: {
-      width: CAMERA_BUTTON_SIZE,
-      height: CAMERA_BUTTON_SIZE,
-      borderRadius: CAMERA_BUTTON_SIZE / 2,
+      width: cameraButtonSize,
+      height: cameraButtonSize,
+      borderRadius: cameraButtonSize / 2,
       backgroundColor: colors.accent,
       alignItems: 'center',
       justifyContent: 'center',
@@ -338,8 +285,6 @@ function createStyles(colors: ThemeColors, isDark: boolean) {
     },
     scanMenuAnchor: {
       position: 'absolute',
-      alignItems: 'center',
-      justifyContent: 'center',
     },
     cameraHint: {
       ...typography.caption,
@@ -347,45 +292,7 @@ function createStyles(colors: ThemeColors, isDark: boolean) {
     },
     scanMenu: {
       gap: spacing.sm,
-    },
-    recentSection: {
-      gap: spacing.sm,
-      flex: 1,
-      marginTop: spacing.lg,
-    },
-    recentHeader: {
-      flexDirection: 'row',
-      alignItems: 'center',
-      justifyContent: 'space-between',
-    },
-    sectionLabel: {
-      ...typography.label,
-      color: colors.textMuted,
-    },
-    clearAllButton: {
-      width: 36,
-      height: 36,
-      borderRadius: radii.pill,
-      alignItems: 'center',
-      justifyContent: 'center',
-      backgroundColor: colors.dangerSoft,
-    },
-    trashHeaderIcon: {
-      fontSize: 18,
-    },
-    emptyCard: {
-      gap: spacing.xs,
-    },
-    emptyTitle: {
-      ...typography.bodyStrong,
-      color: colors.textPrimary,
-    },
-    emptyState: {
-      ...typography.body,
-      color: colors.textSecondary,
-    },
-    recentList: {
-      gap: spacing.sm,
+      width: '100%',
     },
   });
 }

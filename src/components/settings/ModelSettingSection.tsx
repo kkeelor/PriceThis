@@ -31,7 +31,9 @@ export function ModelSettingSection() {
               accessibilityState={{ selected }}
               onPress={() => setPreset(option)}
               style={[styles.option, selected && styles.optionSelected]}>
-              <AppText style={[styles.optionLabel, selected && styles.optionLabelSelected]}>
+              <AppText
+                style={[styles.optionLabel, selected && styles.optionLabelSelected]}
+                numberOfLines={2}>
                 {MODEL_PRESET_LABELS[option]}
               </AppText>
             </Pressable>

@@ -88,6 +88,8 @@ function createStyles(colors: ThemeColors, isDark: boolean) {
     },
     ghost: {
       backgroundColor: 'transparent',
+      minHeight: 44,
+      paddingHorizontal: spacing.md,
     },
     pressed: {
       opacity: 0.88,

@@ -104,6 +104,7 @@ function createStyles(colors: ThemeColors, _isDark: boolean) {
       ...typography.body,
       color: colors.textPrimary,
       flex: 1,
+      minWidth: 0,
     },
     nameSelected: {
       color: colors.accent,

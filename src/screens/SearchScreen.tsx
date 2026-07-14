@@ -16,6 +16,7 @@ import { Screen } from '@/components/ui/Screen';
 import { SearchBar } from '@/components/ui/SearchBar';
 import { TRY_EXAMPLES } from '@/constants/tryExamples';
 import { useTheme } from '@/context/ThemeContext';
+import { useResponsiveLayout } from '@/hooks/useResponsiveLayout';
 import { useScan } from '@/hooks/useScan';
 import type { SearchScreenProps } from '@/navigation/types';
 import { spacing, typography } from '@/theme';
@@ -23,6 +24,7 @@ import type { ThemeColors } from '@/theme/types';
 
 export function SearchScreen({ navigation, route }: SearchScreenProps) {
   const { colors } = useTheme();
+  const { contentFrameStyle, scrollBottomPad } = useResponsiveLayout();
   const styles = createStyles(colors);
   const inputRef = useRef<TextInput>(null);
   const [query, setQuery] = useState(route.params?.initialQuery ?? '');
@@ -61,12 +63,23 @@ export function SearchScreen({ navigation, route }: SearchScreenProps) {
         <ScanningOverlay visible={isScanning} message="Finding value…" />
 
         <ScrollView
-          contentContainerStyle={styles.scroll}
+          contentContainerStyle={[
+            styles.scroll,
+            contentFrameStyle,
+            { paddingBottom: scrollBottomPad },
+          ]}
           keyboardShouldPersistTaps="handled"
           showsVerticalScrollIndicator={false}>
           <View style={styles.header}>
-            <Button label="Back" variant="ghost" onPress={() => navigation.goBack()} />
-            <AppText style={styles.title}>Search</AppText>
+            <Button
+              label="Back"
+              variant="ghost"
+              onPress={() => navigation.goBack()}
+              style={styles.backButton}
+            />
+            <AppText style={styles.title} numberOfLines={1} adjustsFontSizeToFit>
+              Search
+            </AppText>
           </View>
 
           <SearchBar
@@ -119,12 +132,17 @@ function createStyles(colors: ThemeColors) {
     },
     scroll: {
       flexGrow: 1,
-      paddingBottom: spacing.xxl,
       gap: spacing.lg,
+      width: '100%',
     },
     header: {
       marginTop: spacing.md,
       gap: spacing.sm,
+    },
+    backButton: {
+      alignSelf: 'flex-start',
+      minHeight: 44,
+      paddingHorizontal: spacing.md,
     },
     title: {
       ...typography.title,

@@ -6,6 +6,7 @@ import type { ScanResult } from '@/types/scan';
 
 export type MainTabParamList = {
   Home: undefined;
+  History: undefined;
   Favorites: undefined;
 };
 
@@ -23,6 +24,7 @@ export type MainTabScreenProps<T extends keyof MainTabParamList> = CompositeScre
 >;
 
 export type HomeScreenProps = MainTabScreenProps<'Home'>;
+export type HistoryScreenProps = MainTabScreenProps<'History'>;
 export type FavoritesScreenProps = MainTabScreenProps<'Favorites'>;
 export type CameraScreenProps = NativeStackScreenProps<RootStackParamList, 'Camera'>;
 export type SearchScreenProps = NativeStackScreenProps<RootStackParamList, 'Search'>;

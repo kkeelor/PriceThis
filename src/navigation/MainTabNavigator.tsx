@@ -1,9 +1,11 @@
 import { createBottomTabNavigator } from '@react-navigation/bottom-tabs';
-import { Home, Heart } from 'lucide-react-native';
+import { Heart, History, Home } from 'lucide-react-native';
+import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
 import { useTheme } from '@/context/ThemeContext';
 import type { MainTabParamList } from '@/navigation/types';
 import { FavoritesScreen } from '@/screens/FavoritesScreen';
+import { HistoryScreen } from '@/screens/HistoryScreen';
 import { HomeScreen } from '@/screens/HomeScreen';
 import { typography } from '@/theme';
 
@@ -11,6 +13,8 @@ const Tab = createBottomTabNavigator<MainTabParamList>();
 
 export function MainTabNavigator() {
   const { colors, isDark } = useTheme();
+  const insets = useSafeAreaInsets();
+  const bottomPad = Math.max(insets.bottom, 8);
 
   return (
     <Tab.Navigator
@@ -22,9 +26,9 @@ export function MainTabNavigator() {
           backgroundColor: colors.surfaceElevated,
           borderTopColor: colors.border,
           borderTopWidth: isDark ? 1 : 0.5,
-          height: 62,
+          minHeight: 52 + bottomPad,
           paddingTop: 6,
-          paddingBottom: 8,
+          paddingBottom: bottomPad,
         },
         tabBarLabelStyle: {
           ...typography.caption,
@@ -38,6 +42,14 @@ export function MainTabNavigator() {
         options={{
           tabBarLabel: 'Home',
           tabBarIcon: ({ color, size }) => <Home color={color} size={size} strokeWidth={2} />,
+        }}
+      />
+      <Tab.Screen
+        name="History"
+        component={HistoryScreen}
+        options={{
+          tabBarLabel: 'History',
+          tabBarIcon: ({ color, size }) => <History color={color} size={size} strokeWidth={2} />,
         }}
       />
       <Tab.Screen

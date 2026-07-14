@@ -21,7 +21,9 @@ export function CuriosityCardItem({ card }: CuriosityCardItemProps) {
     <Pressable onPress={() => setExpanded(current => !current)}>
       <GlassCard style={styles.card}>
         <View style={styles.header}>
-          <AppText style={styles.title}>{card.title}</AppText>
+          <AppText style={styles.title} numberOfLines={2}>
+            {card.title}
+          </AppText>
           <AppText style={styles.chevron}>{expanded ? '−' : '+'}</AppText>
         </View>
         <AppText style={styles.preview}>{card.preview}</AppText>
@@ -46,10 +48,12 @@ function createStyles(colors: ThemeColors) {
       ...typography.bodyStrong,
       color: colors.textPrimary,
       flex: 1,
+      minWidth: 0,
     },
     chevron: {
       ...typography.headline,
       color: colors.accent,
+      flexShrink: 0,
     },
     preview: {
       ...typography.body,

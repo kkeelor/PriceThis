@@ -98,7 +98,9 @@ export function CameraZoomControls({
 
   return (
     <View style={styles.container}>
-      <AppText style={styles.label}>{formatDisplayZoomLabel(displayFactor)}</AppText>
+      <AppText style={styles.label} numberOfLines={1}>
+        {formatDisplayZoomLabel(displayFactor)}
+      </AppText>
       <View
         style={[styles.trackWrap, disabled && styles.disabled]}
         onLayout={handleTrackLayout}
@@ -122,7 +124,7 @@ export function CameraZoomControls({
           ]}
         />
       </View>
-      <AppText style={styles.edgeLabel}>
+      <AppText style={styles.edgeLabel} numberOfLines={1}>
         {formatDisplayZoomLabel(Math.max(maxDisplayFactor, MIN_DISPLAY_ZOOM))}
       </AppText>
     </View>
@@ -133,29 +135,33 @@ const styles = StyleSheet.create({
   container: {
     flexDirection: 'row',
     alignItems: 'center',
-    alignSelf: 'center',
+    alignSelf: 'stretch',
+    width: '100%',
+    maxWidth: 420,
     gap: spacing.sm,
     backgroundColor: 'rgba(0, 0, 0, 0.45)',
     paddingHorizontal: spacing.md,
     paddingVertical: spacing.sm,
     borderRadius: radii.pill,
-    minWidth: 220,
   },
   label: {
     ...typography.caption,
     color: '#F7F3EA',
     fontWeight: '700',
     minWidth: 28,
+    flexShrink: 0,
     textAlign: 'center',
   },
   edgeLabel: {
     ...typography.caption,
     color: 'rgba(247, 243, 234, 0.65)',
     minWidth: 24,
+    flexShrink: 0,
     textAlign: 'right',
   },
   trackWrap: {
     flex: 1,
+    minWidth: 64,
     height: 32,
     justifyContent: 'center',
   },

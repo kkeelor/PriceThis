@@ -111,6 +111,7 @@ function createStyles(colors: ThemeColors, isDark: boolean) {
     },
     copy: {
       flex: 1,
+      minWidth: 0,
       gap: 2,
     },
     retailer: {

@@ -2,6 +2,7 @@ import { Modal, Pressable, StyleSheet, View } from 'react-native';
 
 import { AppText, Button } from '@/components/ui/Button';
 import { useTheme } from '@/context/ThemeContext';
+import { useResponsiveLayout } from '@/hooks/useResponsiveLayout';
 import { radii, spacing, typography } from '@/theme';
 import type { ThemeColors } from '@/theme/types';
 
@@ -27,7 +28,8 @@ export function ConfirmDialog({
   onConfirm,
 }: ConfirmDialogProps) {
   const { colors, isDark } = useTheme();
-  const styles = createStyles(colors, isDark);
+  const { isCompact, horizontalGutter } = useResponsiveLayout();
+  const styles = createStyles(colors, isDark, isCompact);
 
   return (
     <Modal
@@ -35,7 +37,7 @@ export function ConfirmDialog({
       visible={visible}
       animationType="fade"
       onRequestClose={onCancel}>
-      <View style={styles.backdrop}>
+      <View style={[styles.backdrop, { padding: horizontalGutter }]}>
         <Pressable style={StyleSheet.absoluteFill} onPress={onCancel} />
         <View style={styles.card}>
           {destructive ? (
@@ -44,7 +46,9 @@ export function ConfirmDialog({
             </View>
           ) : null}
 
-          <AppText style={styles.title}>{title}</AppText>
+          <AppText style={styles.title} numberOfLines={3} adjustsFontSizeToFit minimumFontScale={0.8}>
+            {title}
+          </AppText>
           <AppText style={styles.message}>{message}</AppText>
 
           <View style={styles.actions}>
@@ -57,7 +61,13 @@ export function ConfirmDialog({
                   styles.destructiveButton,
                   pressed && styles.destructiveButtonPressed,
                 ]}>
-                <AppText style={styles.destructiveLabel}>{confirmLabel}</AppText>
+                <AppText
+                  style={styles.destructiveLabel}
+                  numberOfLines={1}
+                  adjustsFontSizeToFit
+                  minimumFontScale={0.85}>
+                  {confirmLabel}
+                </AppText>
               </Pressable>
             ) : (
               <Button label={confirmLabel} fullWidth onPress={onConfirm} />
@@ -69,14 +79,13 @@ export function ConfirmDialog({
   );
 }
 
-function createStyles(colors: ThemeColors, isDark: boolean) {
+function createStyles(colors: ThemeColors, isDark: boolean, isCompact: boolean) {
   return StyleSheet.create({
     backdrop: {
       flex: 1,
       backgroundColor: colors.overlay,
       alignItems: 'center',
       justifyContent: 'center',
-      padding: spacing.lg,
     },
     card: {
       width: '100%',
@@ -85,7 +94,7 @@ function createStyles(colors: ThemeColors, isDark: boolean) {
       borderRadius: radii.xl,
       borderWidth: 1,
       borderColor: colors.border,
-      padding: spacing.lg,
+      padding: isCompact ? spacing.md : spacing.lg,
       gap: spacing.md,
       ...(isDark
         ? {}
@@ -111,7 +120,7 @@ function createStyles(colors: ThemeColors, isDark: boolean) {
       lineHeight: 26,
     },
     title: {
-      ...typography.title,
+      ...(isCompact ? typography.headline : typography.title),
       color: colors.textPrimary,
       textAlign: 'center',
     },
@@ -132,6 +141,7 @@ function createStyles(colors: ThemeColors, isDark: boolean) {
       alignItems: 'center',
       justifyContent: 'center',
       paddingHorizontal: spacing.lg,
+      maxWidth: '100%',
     },
     destructiveButtonPressed: {
       opacity: 0.88,
@@ -140,6 +150,7 @@ function createStyles(colors: ThemeColors, isDark: boolean) {
       ...typography.bodyStrong,
       color: '#FFFFFF',
       textAlign: 'center',
+      maxWidth: '100%',
     },
   });
 }

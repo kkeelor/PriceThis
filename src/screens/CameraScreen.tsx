@@ -1,5 +1,11 @@
 import { useCallback, useEffect, useRef, useState } from 'react';
-import { ActivityIndicator, Alert, StyleSheet, View } from 'react-native';
+import {
+  ActivityIndicator,
+  Alert,
+  LayoutChangeEvent,
+  StyleSheet,
+  View,
+} from 'react-native';
 import {
   Camera,
   CommonResolutions,
@@ -15,6 +21,7 @@ import { ScanningOverlay } from '@/components/ui/ScanningOverlay';
 import { AppText, Button } from '@/components/ui/Button';
 import { Screen } from '@/components/ui/Screen';
 import { useTheme } from '@/context/ThemeContext';
+import { useResponsiveLayout } from '@/hooks/useResponsiveLayout';
 import { useScan } from '@/hooks/useScan';
 import { useVolumeShutter } from '@/hooks/useVolumeShutter';
 import type { CameraScreenProps } from '@/navigation/types';
@@ -22,6 +29,11 @@ import { spacing, typography } from '@/theme';
 import type { ThemeColors } from '@/theme/types';
 import { arrayBufferToBase64 } from '@/utils/base64';
 import { computeOneXZoom, resolveDefaultZoom } from '@/utils/cameraZoom';
+
+type PreviewLayout = {
+  width: number;
+  height: number;
+};
 
 function waitForNextFrame(): Promise<void> {
   return new Promise(resolve => {
@@ -33,17 +45,19 @@ function waitForNextFrame(): Promise<void> {
 
 export function CameraScreen({ navigation }: CameraScreenProps) {
   const { colors } = useTheme();
+  const { insets, isShort, isCompact, horizontalGutter } = useResponsiveLayout();
   const styles = createStyles(colors);
   const cameraRef = useRef<CameraRef>(null);
   const isCapturingRef = useRef(false);
   const device = useCameraDevice('back');
   const photoOutput = usePhotoOutput({
-    targetResolution: CommonResolutions.HD_16_9,
+    targetResolution: CommonResolutions.HD_4_3,
     quality: 0.7,
     qualityPrioritization: 'speed',
   });
   const { hasPermission, requestPermission } = useCameraPermission();
   const [isReady, setIsReady] = useState(false);
+  const [previewLayout, setPreviewLayout] = useState<PreviewLayout | null>(null);
   const [zoom, setZoom] = useState(1);
   const [zoomLimits, setZoomLimits] = useState({ min: 1, max: 1 });
   const [oneXZoom, setOneXZoom] = useState(1);
@@ -130,6 +144,20 @@ export function CameraScreen({ navigation }: CameraScreenProps) {
     });
   }, [applyDefaultZoom]);
 
+  const handlePreviewLayout = useCallback((event: LayoutChangeEvent) => {
+    const { width, height } = event.nativeEvent.layout;
+    if (width <= 0 || height <= 0) {
+      return;
+    }
+
+    setPreviewLayout(current => {
+      if (current && current.width === width && current.height === height) {
+        return current;
+      }
+      return { width, height };
+    });
+  }, []);
+
   const handleZoomChange = useCallback(
     (nextZoom: number) => {
       const clamped = Math.min(zoomLimits.max, Math.max(zoomLimits.min, nextZoom));
@@ -141,7 +169,7 @@ export function CameraScreen({ navigation }: CameraScreenProps) {
 
   if (!hasPermission) {
     return (
-      <Screen>
+      <Screen safeBottom>
         <View style={styles.centered}>
           <AppText style={styles.message}>
             Camera access is required to scan objects.
@@ -155,7 +183,7 @@ export function CameraScreen({ navigation }: CameraScreenProps) {
 
   if (!device) {
     return (
-      <Screen>
+      <Screen safeBottom>
         <View style={styles.centered}>
           <ActivityIndicator color={colors.accent} size="large" />
           <AppText style={styles.message}>Starting camera…</AppText>
@@ -164,50 +192,77 @@ export function CameraScreen({ navigation }: CameraScreenProps) {
     );
   }
 
+  const topPad = Math.max(insets.top, spacing.md);
+  const bottomPad = Math.max(insets.bottom, spacing.md);
+  const zoomBottom = bottomPad + (isShort ? 118 : 168);
+
   return (
-    <View style={styles.container}>
+    <View style={styles.container} onLayout={handlePreviewLayout}>
       <ScanningOverlay visible={isScanning} message="Identifying object…" />
 
-      <Camera
-        ref={cameraRef}
-        style={StyleSheet.absoluteFill}
-        device={device}
-        isActive={!isScanning}
-        outputs={[photoOutput]}
-        onPreviewStarted={handlePreviewStarted}
-      />
+      {previewLayout ? (
+        <Camera
+          ref={cameraRef}
+          style={{
+            position: 'absolute',
+            top: 0,
+            left: 0,
+            width: previewLayout.width,
+            height: previewLayout.height,
+          }}
+          device={device}
+          isActive={!isScanning}
+          outputs={[photoOutput]}
+          resizeMode="cover"
+          implementationMode="compatible"
+          onPreviewStarted={handlePreviewStarted}
+        />
+      ) : null}
 
       <CameraViewfinder />
 
-      <View style={styles.overlay} pointerEvents="box-none">
-        <View style={styles.topBar}>
-          <Button label="Close" variant="ghost" onPress={handleClose} />
+      <View
+        style={[styles.overlay, { paddingHorizontal: horizontalGutter }]}
+        pointerEvents="box-none">
+        <View style={[styles.topBar, { paddingTop: topPad }]}>
+          <Button
+            label="Close"
+            variant="ghost"
+            onPress={handleClose}
+            style={styles.chromeButton}
+          />
         </View>
 
-        <CameraZoomControls
-          zoom={zoom}
-          minZoom={zoomLimits.min}
-          maxZoom={zoomLimits.max}
-          oneXZoom={oneXZoom}
-          disabled={!isReady || isScanning}
-          onZoomChange={handleZoomChange}
-        />
+        <View style={[styles.zoomSlot, { bottom: zoomBottom }]} pointerEvents="box-none">
+          <CameraZoomControls
+            zoom={zoom}
+            minZoom={zoomLimits.min}
+            maxZoom={zoomLimits.max}
+            oneXZoom={oneXZoom}
+            disabled={!isReady || isScanning}
+            onZoomChange={handleZoomChange}
+          />
+        </View>
 
-        <View style={styles.bottomBar}>
-          <AppText style={styles.hint}>
-            {isReady
-              ? 'Slide to zoom. Volume buttons also capture. Point at something valuable, then tap to scan.'
-              : 'Opening camera…'}
-          </AppText>
+        <View style={[styles.bottomBar, { paddingBottom: bottomPad }]}>
+          {!isShort ? (
+            <AppText style={styles.hint} numberOfLines={2}>
+              {isReady
+                ? 'Slide to zoom · volume buttons also capture'
+                : 'Opening camera…'}
+            </AppText>
+          ) : null}
           <Button
             label={isScanning ? 'Scanning…' : 'Tap to Scan'}
             disabled={!isReady || isScanning}
+            fullWidth
             onPress={() => void handleScan()}
           />
           <Button
             label="Search instead"
             variant="ghost"
             onPress={() => navigation.navigate('Search')}
+            style={[styles.chromeButton, isCompact && styles.compactGhost]}
           />
         </View>
       </View>
@@ -224,22 +279,37 @@ function createStyles(colors: ThemeColors) {
     overlay: {
       ...StyleSheet.absoluteFill,
       justifyContent: 'space-between',
-      padding: spacing.lg,
     },
     topBar: {
       alignItems: 'flex-start',
     },
+    zoomSlot: {
+      position: 'absolute',
+      left: 0,
+      right: 0,
+      alignItems: 'center',
+    },
     bottomBar: {
-      gap: spacing.md,
-      paddingBottom: spacing.xl,
+      gap: spacing.sm,
+      alignItems: 'stretch',
     },
     hint: {
-      ...typography.body,
+      ...typography.caption,
       color: '#F7F3EA',
       textAlign: 'center',
       backgroundColor: 'rgba(0, 0, 0, 0.55)',
-      padding: spacing.md,
-      borderRadius: 16,
+      paddingHorizontal: spacing.md,
+      paddingVertical: spacing.sm,
+      borderRadius: 14,
+      alignSelf: 'center',
+      maxWidth: '100%',
+    },
+    chromeButton: {
+      minHeight: 44,
+      paddingHorizontal: spacing.md,
+    },
+    compactGhost: {
+      minHeight: 40,
     },
     centered: {
       flex: 1,

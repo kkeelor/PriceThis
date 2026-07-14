@@ -10,6 +10,7 @@ import { Screen } from '@/components/ui/Screen';
 import { useCurrency } from '@/context/CurrencyContext';
 import { useTheme } from '@/context/ThemeContext';
 import { useFavorites } from '@/hooks/useFavorites';
+import { useResponsiveLayout } from '@/hooks/useResponsiveLayout';
 import type { FavoritesScreenProps } from '@/navigation/types';
 import { spacing, typography } from '@/theme';
 import type { ThemeColors } from '@/theme/types';
@@ -17,7 +18,8 @@ import type { ThemeColors } from '@/theme/types';
 export function FavoritesScreen({ navigation }: FavoritesScreenProps) {
   const { colors, isDark } = useTheme();
   const { convertAndFormat } = useCurrency();
-  const styles = createStyles(colors, isDark);
+  const { contentFrameStyle, isCompact } = useResponsiveLayout();
+  const styles = createStyles(colors, isDark, isCompact);
   const {
     categories,
     groups,
@@ -47,11 +49,13 @@ export function FavoritesScreen({ navigation }: FavoritesScreenProps) {
   return (
     <Screen>
       <ScrollView
-        contentContainerStyle={styles.scroll}
+        contentContainerStyle={[styles.scroll, contentFrameStyle]}
         showsVerticalScrollIndicator={false}>
         <View style={styles.header}>
           <View style={styles.headerTop}>
-            <AppText style={styles.title}>Favorites</AppText>
+            <AppText style={styles.title} numberOfLines={1} adjustsFontSizeToFit>
+              Favorites
+            </AppText>
             <Pressable
               accessibilityRole="button"
               accessibilityLabel="Manage categories"
@@ -86,7 +90,11 @@ export function FavoritesScreen({ navigation }: FavoritesScreenProps) {
           <>
             <GlassCard style={styles.portfolioCard}>
               <AppText style={styles.portfolioLabel}>Total portfolio value</AppText>
-              <AppText style={styles.portfolioValue} numberOfLines={1} adjustsFontSizeToFit>
+              <AppText
+                style={styles.portfolioValue}
+                numberOfLines={1}
+                adjustsFontSizeToFit
+                minimumFontScale={0.7}>
                 {convertAndFormat(portfolioTotal)}
               </AppText>
               <AppText style={styles.portfolioHint}>
@@ -102,8 +110,10 @@ export function FavoritesScreen({ navigation }: FavoritesScreenProps) {
               return (
                 <View key={group.category.id} style={styles.section}>
                   <View style={styles.sectionHeader}>
-                    <AppText style={styles.sectionTitle}>{group.category.name}</AppText>
-                    <AppText style={styles.sectionTotal}>
+                    <AppText style={styles.sectionTitle} numberOfLines={1}>
+                      {group.category.name}
+                    </AppText>
+                    <AppText style={styles.sectionTotal} numberOfLines={1}>
                       {convertAndFormat(subtotal?.totalValue ?? 0)}
                     </AppText>
                   </View>
@@ -137,11 +147,12 @@ export function FavoritesScreen({ navigation }: FavoritesScreenProps) {
   );
 }
 
-function createStyles(colors: ThemeColors, isDark: boolean) {
+function createStyles(colors: ThemeColors, isDark: boolean, isCompact: boolean) {
   return StyleSheet.create({
     scroll: {
       paddingBottom: spacing.xxl,
       gap: spacing.lg,
+      width: '100%',
     },
     header: {
       marginTop: spacing.md,
@@ -151,10 +162,13 @@ function createStyles(colors: ThemeColors, isDark: boolean) {
       flexDirection: 'row',
       alignItems: 'center',
       justifyContent: 'space-between',
+      gap: spacing.md,
     },
     title: {
       ...typography.title,
       color: isDark ? colors.accentLight : colors.textPrimary,
+      flex: 1,
+      minWidth: 0,
     },
     manageButton: {
       width: 40,
@@ -163,6 +177,7 @@ function createStyles(colors: ThemeColors, isDark: boolean) {
       alignItems: 'center',
       justifyContent: 'center',
       backgroundColor: colors.surface,
+      flexShrink: 0,
     },
     subtitle: {
       ...typography.body,
@@ -172,6 +187,9 @@ function createStyles(colors: ThemeColors, isDark: boolean) {
       alignItems: 'center',
       gap: spacing.sm,
       paddingVertical: spacing.xl,
+      alignSelf: 'center',
+      width: '100%',
+      maxWidth: 420,
     },
     emptyTitle: {
       ...typography.bodyStrong,
@@ -196,8 +214,8 @@ function createStyles(colors: ThemeColors, isDark: boolean) {
     portfolioValue: {
       ...typography.hero,
       color: isDark ? colors.accentLight : colors.textPrimary,
-      fontSize: 34,
-      lineHeight: 38,
+      fontSize: isCompact ? 30 : 34,
+      lineHeight: isCompact ? 34 : 38,
     },
     portfolioHint: {
       ...typography.caption,
@@ -216,10 +234,14 @@ function createStyles(colors: ThemeColors, isDark: boolean) {
       ...typography.bodyStrong,
       color: colors.textPrimary,
       flex: 1,
+      minWidth: 0,
     },
     sectionTotal: {
       ...typography.bodyStrong,
       color: colors.accent,
+      flexShrink: 1,
+      maxWidth: '45%',
+      textAlign: 'right',
     },
     list: {
       gap: spacing.sm,

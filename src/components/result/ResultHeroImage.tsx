@@ -84,7 +84,8 @@ export function ResultHeroImage({ imageUri, objectName }: ResultHeroImageProps) 
 }
 
 function createStyles(colors: ThemeColors, width: number) {
-  const heroHeight = Math.round(Math.min(width * 0.72, 320));
+  const heightCap = width >= 600 ? 420 : width >= 428 ? 360 : 320;
+  const heroHeight = Math.round(Math.min(width * 0.72, heightCap));
 
   return StyleSheet.create({
     pressable: {
@@ -97,7 +98,7 @@ function createStyles(colors: ThemeColors, width: number) {
       height: '100%',
     },
     loadingOverlay: {
-      ...StyleSheet.absoluteFillObject,
+      ...StyleSheet.absoluteFill,
       alignItems: 'center',
       justifyContent: 'center',
       backgroundColor: 'rgba(0, 0, 0, 0.2)',
