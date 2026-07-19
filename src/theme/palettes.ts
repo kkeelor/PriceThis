@@ -8,7 +8,7 @@ export const brandStops = {
   teal: '#00D4C8',
 } as const;
 
-export const darkColors: ThemeColors = {
+const darkColors: ThemeColors = {
   background: '#0A0E18',
   surface: '#121722',
   surfaceElevated: '#1A2233',
@@ -34,7 +34,7 @@ export const darkColors: ThemeColors = {
   shadow: '#000000',
 };
 
-export const lightColors: ThemeColors = {
+const lightColors: ThemeColors = {
   background: '#F2F4F8',
   surface: '#FFFFFF',
   surfaceElevated: '#FFFFFF',

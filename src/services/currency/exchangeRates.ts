@@ -2,7 +2,6 @@ import { storage, storageKeys } from '@/services/storage/mmkv';
 import {
   DEFAULT_CURRENCY_CODE,
   SUPPORTED_CURRENCY_CODES,
-  type SupportedCurrencyCode,
 } from '@/types/currency';
 
 const RATE_TTL_MS = 24 * 60 * 60 * 1000;

@@ -1,12 +1,13 @@
 import { useCallback, useState } from 'react';
 import { Alert } from 'react-native';
 
-import { useModelPreset } from '@/context/ModelPresetContext';
 import { scanByImage, scanByText, type PendingScanResult } from '@/services/scan/scanService';
 import { saveScanResult } from '@/services/storage/scanHistory';
 import { persistHeroImage } from '@/services/storage/scanImages';
 import type { ScanResult } from '@/types/scan';
 import { getErrorMessage } from '@/utils/errorMessage';
+
+const AI_MODEL = 'gemini';
 
 type UseScanOptions = {
   onSuccess: (result: ScanResult) => void;
@@ -14,14 +15,13 @@ type UseScanOptions = {
 };
 
 export function useScan({ onSuccess, showErrorAlert = true }: UseScanOptions) {
-  const { preset } = useModelPreset();
   const [isScanning, setIsScanning] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
   const handleSuccess = useCallback(
     async (result: PendingScanResult) => {
       const imageSource = result.heroImageUri ?? result.heroImageUrl;
-      let toSave: ScanResult = result;
+      let toSave: PendingScanResult = result;
 
       if (imageSource) {
         const persistedUri = await persistHeroImage(result.id, imageSource);
@@ -30,7 +30,8 @@ export function useScan({ onSuccess, showErrorAlert = true }: UseScanOptions) {
         }
       }
 
-      const { heroImageUrl: _heroImageUrl, ...saved } = toSave;
+      const saved = { ...toSave };
+      delete saved.heroImageUrl;
       saveScanResult(saved);
       onSuccess(saved);
     },
@@ -42,7 +43,7 @@ export function useScan({ onSuccess, showErrorAlert = true }: UseScanOptions) {
       setIsScanning(true);
       setError(null);
       try {
-        const result = await scanByText(query, preset);
+        const result = await scanByText(query, AI_MODEL);
         await handleSuccess(result);
       } catch (scanError) {
         const message = getErrorMessage(scanError, 'Scan failed');
@@ -54,7 +55,7 @@ export function useScan({ onSuccess, showErrorAlert = true }: UseScanOptions) {
         setIsScanning(false);
       }
     },
-    [handleSuccess, preset, showErrorAlert],
+    [handleSuccess, showErrorAlert],
   );
 
   const runImageScan = useCallback(
@@ -70,7 +71,7 @@ export function useScan({ onSuccess, showErrorAlert = true }: UseScanOptions) {
       try {
         const result = await scanByImage(imageBase64, {
           ...options,
-          model: preset,
+          model: AI_MODEL,
         });
         await handleSuccess(result);
       } catch (scanError) {
@@ -83,7 +84,7 @@ export function useScan({ onSuccess, showErrorAlert = true }: UseScanOptions) {
         setIsScanning(false);
       }
     },
-    [handleSuccess, preset, showErrorAlert],
+    [handleSuccess, showErrorAlert],
   );
 
   const runTextScanWithHero = useCallback(
@@ -91,7 +92,7 @@ export function useScan({ onSuccess, showErrorAlert = true }: UseScanOptions) {
       setIsScanning(true);
       setError(null);
       try {
-        const result = await scanByText(query, preset);
+        const result = await scanByText(query, AI_MODEL);
         const withHero = heroImageUri ? { ...result, heroImageUri } : result;
         await handleSuccess(withHero);
       } catch (scanError) {
@@ -104,7 +105,7 @@ export function useScan({ onSuccess, showErrorAlert = true }: UseScanOptions) {
         setIsScanning(false);
       }
     },
-    [handleSuccess, preset, showErrorAlert],
+    [handleSuccess, showErrorAlert],
   );
 
   const clearError = useCallback(() => {

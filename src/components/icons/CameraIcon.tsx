@@ -19,7 +19,6 @@ export function CameraIcon({ size = 28, color = '#F4F6FB' }: CameraIconProps) {
             width: bodyW * 0.38,
             height: size * 0.14,
             borderColor: color,
-            top: 0,
           },
         ]}
       />
@@ -30,7 +29,6 @@ export function CameraIcon({ size = 28, color = '#F4F6FB' }: CameraIconProps) {
             width: bodyW,
             height: bodyH,
             borderColor: color,
-            bottom: 0,
           },
         ]}>
         <View
@@ -55,6 +53,7 @@ const styles = StyleSheet.create({
   },
   bump: {
     position: 'absolute',
+    top: 0,
     borderWidth: 2,
     borderBottomWidth: 0,
     borderTopLeftRadius: 4,
@@ -62,6 +61,7 @@ const styles = StyleSheet.create({
   },
   body: {
     position: 'absolute',
+    bottom: 0,
     borderWidth: 2,
     borderRadius: 6,
     alignItems: 'center',

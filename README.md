@@ -1,11 +1,11 @@
 # PriceThis
 
-The Shazam for expensive things — bare React Native app + serverless Claude API.
+The Shazam for expensive things — bare React Native app + serverless Gemini API.
 
 ## Stack
 
 - **Mobile:** React Native 0.86 (bare), TypeScript, Vision Camera, React Navigation
-- **API:** Vercel serverless (`/server`), Claude vision + text
+- **API:** Vercel serverless (`/server`), Gemini vision + text
 - **Locale:** Device currency/locale via `react-native-localize`
 
 See [docs/PLAN.md](docs/PLAN.md) for architecture and phase plan.  
@@ -34,9 +34,9 @@ npm run dev:stop     # stop API + Metro
 
 ### Setup (one-time)
 
-1. Add Claude API key to `server/.env`:
+1. Add Gemini API key to `server/.env`:
    ```
-   ANTHROPIC_API_KEY=sk-ant-...
+   GEMINI_API_KEY=...
    ```
 2. Plug in Android phone with USB debugging enabled
 3. Run `npm run dev:install`
@@ -47,7 +47,7 @@ See [docs/DEPLOY.md](docs/DEPLOY.md) for full steps. Summary:
 
 1. Push repo to GitHub
 2. Import on Vercel with **Root Directory = `server`**
-3. Add `ANTHROPIC_API_KEY` env var
+3. Add `GEMINI_API_KEY` env var
 4. Set `API_BASE_URL` in `.env.standalone` → `npm run android:standalone`
 
 ```bash
@@ -60,7 +60,7 @@ source scripts/android-env.sh && adb reverse tcp:3000 tcp:3000 && adb reverse tc
 
 ```text
 src/           Mobile app (screens, navigation, theme, services)
-server/        Serverless API proxy (Claude + market-data hooks)
+server/        Serverless API proxy (Gemini + market-data hooks)
 android/ ios/  Native projects
 docs/          Build plan
 ```

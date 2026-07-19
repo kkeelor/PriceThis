@@ -41,7 +41,7 @@ export type ScanImageRequest = {
   locale: string;
   currencyCode: string;
   countryCode?: string;
-  model?: string;
+  model?: 'gemini';
 };
 
 export type ScanTextRequest = {
@@ -49,5 +49,5 @@ export type ScanTextRequest = {
   locale: string;
   currencyCode: string;
   countryCode?: string;
-  model?: string;
+  model?: 'gemini';
 };

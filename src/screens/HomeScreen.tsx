@@ -200,7 +200,7 @@ export function HomeScreen({ navigation }: HomeScreenProps) {
                     variant="secondary"
                     fullWidth
                     disabled={isScanning}
-                    onPress={() => void handleGalleryUpload()}
+                    onPress={() => handleGalleryUpload()}
                   />
                 </GlassCard>
               </Pressable>

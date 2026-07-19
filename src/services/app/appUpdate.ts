@@ -8,7 +8,6 @@ import {
   getInstalledVersionName,
 } from '@/services/app/appVersion';
 import {
-  ensureInstallPermission,
   installDownloadedApk,
   isApkInstallerAvailable,
   isInstallPermissionDenied,
@@ -33,10 +32,14 @@ export type UpdateDownloadHandlers = {
   onStatus?: (status: string) => void;
 };
 
+type BlobFetchResult = {
+  path: () => string;
+};
+
 type BlobFetchTask = {
   progress: (handler: (received: string, total: string) => void) => BlobFetchTask;
   cancel: (callback?: () => void) => void;
-  then: Promise<unknown>['then'];
+  then: Promise<BlobFetchResult>['then'];
 };
 
 export class UpdateDownloadError extends Error {
@@ -84,7 +87,7 @@ async function tryFetchManifest(url: string): Promise<AppUpdateManifest | null> 
   }
 }
 
-export async function fetchUpdateManifest(): Promise<AppUpdateManifest | null> {
+async function fetchUpdateManifest(): Promise<AppUpdateManifest | null> {
   const base = getApiBaseUrl().replace(/\/$/, '');
   const candidates = [`${base}/releases/manifest.json`, `${base}/api/app/update`];
 
@@ -210,7 +213,7 @@ function startFileProgressPolling(
   }
 
   const interval = setInterval(() => {
-    void ReactNativeBlobUtil.fs
+    ReactNativeBlobUtil.fs
       .stat(path)
       .then(stat => {
         if (stat.size <= 0) {
@@ -239,7 +242,7 @@ async function waitForTaskWithStallGuard(
   task: BlobFetchTask,
   path: string,
   handlers?: UpdateDownloadHandlers,
-): Promise<Awaited<ReturnType<BlobFetchTask['then']>>> {
+): Promise<BlobFetchResult> {
   const startedAt = Date.now();
 
   while (Date.now() - startedAt < STALL_TIMEOUT_MS) {

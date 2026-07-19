@@ -1,6 +1,4 @@
-import { resolveModel } from './models.js';
-
-export type ScanProvider = 'claude' | 'gemini';
+export type ScanProvider = 'gemini';
 
 export type ResolvedScanTarget = {
   provider: ScanProvider;
@@ -8,33 +6,20 @@ export type ResolvedScanTarget = {
   preset?: string;
 };
 
-const GEMINI_PRESET = 'gemini';
-
 function getGeminiModelId(): string {
   return process.env.GEMINI_MODEL?.trim() || 'gemini-3.1-flash-lite';
 }
 
-export function isGeminiPreset(requested?: string): boolean {
-  const normalized = requested?.trim().toLowerCase();
-  return !normalized || normalized === GEMINI_PRESET || normalized === 'default';
-}
-
 export function resolveScanTarget(requested?: string): ResolvedScanTarget {
   const normalized = requested?.trim().toLowerCase();
-
-  if (isGeminiPreset(requested)) {
-    return {
-      provider: 'gemini',
-      modelId: getGeminiModelId(),
-      preset: normalized === GEMINI_PRESET ? GEMINI_PRESET : 'default',
-    };
+  if (normalized && normalized !== 'gemini' && normalized !== 'default') {
+    throw new Error('Only the Gemini model is supported.');
   }
 
-  const resolved = resolveModel(requested);
   return {
-    provider: 'claude',
-    modelId: resolved.id,
-    preset: resolved.preset,
+    provider: 'gemini',
+    modelId: getGeminiModelId(),
+    preset: 'gemini',
   };
 }
 

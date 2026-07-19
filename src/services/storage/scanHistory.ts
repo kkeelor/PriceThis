@@ -43,7 +43,7 @@ function writeHistory(history: ScanResult[]): void {
 export function deleteScanById(id: string): void {
   writeHistory(readHistory().filter(item => item.id !== id));
   removeFavorite(id);
-  void deleteScanImage(id);
+  deleteScanImage(id).catch(() => undefined);
 }
 
 export function updateScanAccuracy(
@@ -59,5 +59,5 @@ export function updateScanAccuracy(
 export function clearAllScans(): void {
   writeHistory([]);
   clearAllFavorites();
-  void deleteAllScanImages();
+  deleteAllScanImages().catch(() => undefined);
 }

@@ -61,7 +61,7 @@ export function useFavorites() {
 
   const getRecordForScan = useCallback(
     (scanId: string) => getFavoriteRecord(scanId),
-    [groups],
+    [],
   );
 
   const toggleFavorite = useCallback(

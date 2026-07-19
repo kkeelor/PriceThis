@@ -6,11 +6,11 @@
 |------|----------|
 | Mobile | **Bare React Native 0.86** + TypeScript |
 | Camera | **react-native-vision-camera** (native perf/control) |
-| AI | **Claude API** (vision + text) via serverless proxy |
-| Valuation | Claude primary; **market-data hook** ready for enrichment when high-confidence matches exist |
+| AI | **Gemini API** (vision + text) via serverless proxy |
+| Valuation | Gemini primary; **market-data hook** ready for enrichment when high-confidence matches exist |
 | Currency/locale | **Device locale** via `react-native-localize` |
 | Backend | **Serverless** in `/server` (Vercel-first; Cloudflare Workers possible later) |
-| Secrets | Claude key **server-side only** — never in the mobile app |
+| Secrets | Gemini key **server-side only** — never in the mobile app |
 
 ## Architecture
 
@@ -19,7 +19,7 @@ Mobile (bare RN)
   ├── Camera / Gallery / Search
   ├── Local history (MMKV)
   └── API client → serverless /api/scan/*
-                        └── Claude + optional market data
+                        └── Gemini + optional market data
 ```
 
 ## MVP phases (unchanged scope)
@@ -28,7 +28,7 @@ Mobile (bare RN)
 2. Design system
 3. Home screen
 4. Camera + detection overlay
-5. Claude recognition (wired)
+5. Gemini recognition (wired)
 6. Valuation + Wow insight
 7. Result screen
 8. Curiosity cards
@@ -71,13 +71,13 @@ Set `API_BASE_URL` to your deployed or local server URL.
 ```bash
 cd server
 npm install
-cp .env.example .env   # add ANTHROPIC_API_KEY
+cp .env.example .env   # add GEMINI_API_KEY
 npm run dev            # vercel dev
 ```
 
 ## Market data strategy (v1)
 
-- Ship fast with Claude estimates + honest confidence scoring.
+- Ship fast with Gemini estimates + honest confidence scoring.
 - Keep `server/lib/market-data.ts` as the integration seam.
 - Add provider-specific lookups (vehicles, watches, real estate) only when they materially improve UX for matched categories.
 

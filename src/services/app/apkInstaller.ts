@@ -41,14 +41,14 @@ export function isInstallPermissionDenied(error: unknown): boolean {
   return false;
 }
 
-export async function canInstallApks(): Promise<boolean> {
+async function canInstallApks(): Promise<boolean> {
   if (!native) {
     return true;
   }
   return native.canInstall();
 }
 
-export async function openInstallPermissionSettings(): Promise<void> {
+async function openInstallPermissionSettings(): Promise<void> {
   if (!native) {
     return;
   }

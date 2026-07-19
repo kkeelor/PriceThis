@@ -1,6 +1,5 @@
 import http from 'node:http';
 
-import { listConfiguredModels } from './lib/models.js';
 import { buildProductListings } from './lib/listings.js';
 import { fetchItemImageUrl } from './lib/item-image.js';
 import { getMarketContextForImageLabel } from './lib/market-data.js';
@@ -10,7 +9,6 @@ import { isPipelineEnabled } from './lib/scan-gates.js';
 import { isGeminiConfigured } from './lib/resolve-scan.js';
 import { runImageScanPipeline, runTextScanPipeline } from './lib/scan-pipeline.js';
 import type { ScanImageRequest, ScanTextRequest } from './lib/types.js';
-import { isWebSearchEnabled } from './lib/web-search.js';
 
 const PORT = Number(process.env.PORT ?? 3000);
 
@@ -19,7 +17,7 @@ function sendJson(res: http.ServerResponse, status: number, body: unknown) {
     'Content-Type': 'application/json',
     'Access-Control-Allow-Origin': '*',
     'Access-Control-Allow-Methods': 'GET, POST, OPTIONS',
-    'Access-Control-Allow-Headers': 'Content-Type, X-Claude-Model',
+    'Access-Control-Allow-Headers': 'Content-Type',
   });
   res.end(JSON.stringify(body));
 }
@@ -44,18 +42,22 @@ const server = http.createServer(async (req, res) => {
   if (req.method === 'GET' && req.url === '/api/health') {
     return sendJson(res, 200, {
       ok: true,
-      claudeConfigured: Boolean(process.env.ANTHROPIC_API_KEY),
-      webSearchEnabled: isWebSearchEnabled(),
       pipelineEnabled: isPipelineEnabled(),
       geminiConfigured: isGeminiConfigured(),
-      models: listConfiguredModels(),
     });
   }
 
   if (req.method === 'GET' && req.url === '/api/models') {
     return sendJson(res, 200, {
-      defaultPreset: 'default',
-      models: listConfiguredModels(),
+      defaultPreset: 'gemini',
+      models: [
+        {
+          preset: 'gemini',
+          envVar: 'GEMINI_MODEL',
+          modelId: process.env.GEMINI_MODEL?.trim() || 'gemini-3.1-flash-lite',
+          configured: isGeminiConfigured(),
+        },
+      ],
     });
   }
 
@@ -129,7 +131,7 @@ const server = http.createServer(async (req, res) => {
 });
 
 server.listen(PORT, () => {
-  const hasKey = Boolean(process.env.ANTHROPIC_API_KEY);
+  const hasKey = isGeminiConfigured();
   console.log(`PriceThis API listening on http://localhost:${PORT}`);
-  console.log(hasKey ? 'Claude API key: configured' : 'Claude API key: MISSING — add to server/.env');
+  console.log(hasKey ? 'Gemini API key: configured' : 'Gemini API key: MISSING — add to server/.env');
 });

@@ -5,7 +5,7 @@ function encodeQuery(query: string): string {
   return encodeURIComponent(query.trim());
 }
 
-export function buildProductListings(
+function buildProductListings(
   objectName: string,
   locale = getDeviceLocale(),
 ): ProductListing[] {

@@ -11,7 +11,7 @@ const SHORT_HEIGHT = 700;
 /** Large phones / small tablets — start capping reading width. */
 const WIDE_WIDTH = 428;
 
-export const CONTENT_MAX_WIDTH = 560;
+const CONTENT_MAX_WIDTH = 560;
 
 export function useResponsiveLayout() {
   const { width, height } = useWindowDimensions();

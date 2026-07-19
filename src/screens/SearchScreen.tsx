@@ -51,7 +51,7 @@ export function SearchScreen({ navigation, route }: SearchScreenProps) {
       return;
     }
     clearError();
-    void runTextScan(trimmed);
+    runTextScan(trimmed);
   }, [clearError, isScanning, query, runTextScan]);
 
   return (

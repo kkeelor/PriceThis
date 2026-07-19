@@ -42,7 +42,7 @@ export function ProductListings({ listings }: ProductListingsProps) {
             key={listing.id}
             accessibilityRole="link"
             accessibilityLabel={listing.title}
-            onPress={() => void openListing(listing.url)}
+            onPress={() => openListing(listing.url)}
             style={styles.row}>
             <View style={styles.iconWrap}>
               <AppText style={styles.icon}>

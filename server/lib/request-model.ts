@@ -9,15 +9,10 @@ type ModelCarrier = {
 };
 
 export function getRequestedModel(
-  req: VercelRequest | IncomingMessage,
+  _req: VercelRequest | IncomingMessage,
   body?: ModelCarrier,
 ): string | undefined {
-  const headerValue = req.headers['x-claude-model'];
-  const fromHeader = Array.isArray(headerValue)
-    ? headerValue[0]
-    : headerValue;
-
-  return body?.model?.trim() || fromHeader?.trim() || undefined;
+  return body?.model?.trim() || undefined;
 }
 
 export function withScanMeta<T extends Record<string, unknown>>(
@@ -27,7 +22,7 @@ export function withScanMeta<T extends Record<string, unknown>>(
 ): T & {
   meta: {
     modelId: string;
-    provider: 'claude' | 'gemini';
+    provider: 'gemini';
     preset?: string;
     pipeline?: PipelineMeta;
   };
@@ -43,12 +38,4 @@ export function withScanMeta<T extends Record<string, unknown>>(
       ...(pipeline ? { pipeline } : {}),
     },
   };
-}
-
-/** @deprecated Use withScanMeta */
-export function withModelMeta<T extends Record<string, unknown>>(
-  result: T,
-  requestedModel?: string,
-): T & { meta: { modelId: string; preset?: string } } {
-  return withScanMeta(result, requestedModel);
 }

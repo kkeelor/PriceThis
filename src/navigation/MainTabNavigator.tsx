@@ -11,6 +11,20 @@ import { typography } from '@/theme';
 
 const Tab = createBottomTabNavigator<MainTabParamList>();
 
+type TabIconProps = { color: string; size: number };
+
+function HomeTabIcon({ color, size }: TabIconProps) {
+  return <Home color={color} size={size} strokeWidth={2} />;
+}
+
+function HistoryTabIcon({ color, size }: TabIconProps) {
+  return <History color={color} size={size} strokeWidth={2} />;
+}
+
+function FavoritesTabIcon({ color, size }: TabIconProps) {
+  return <Heart color={color} size={size} strokeWidth={2} />;
+}
+
 export function MainTabNavigator() {
   const { colors, isDark } = useTheme();
   const insets = useSafeAreaInsets();
@@ -41,7 +55,7 @@ export function MainTabNavigator() {
         component={HomeScreen}
         options={{
           tabBarLabel: 'Home',
-          tabBarIcon: ({ color, size }) => <Home color={color} size={size} strokeWidth={2} />,
+          tabBarIcon: HomeTabIcon,
         }}
       />
       <Tab.Screen
@@ -49,7 +63,7 @@ export function MainTabNavigator() {
         component={HistoryScreen}
         options={{
           tabBarLabel: 'History',
-          tabBarIcon: ({ color, size }) => <History color={color} size={size} strokeWidth={2} />,
+          tabBarIcon: HistoryTabIcon,
         }}
       />
       <Tab.Screen
@@ -57,7 +71,7 @@ export function MainTabNavigator() {
         component={FavoritesScreen}
         options={{
           tabBarLabel: 'Favorites',
-          tabBarIcon: ({ color, size }) => <Heart color={color} size={size} strokeWidth={2} />,
+          tabBarIcon: FavoritesTabIcon,
         }}
       />
     </Tab.Navigator>

@@ -14,7 +14,7 @@ type ConfidenceInput = {
   valuationConfidence?: number;
 };
 
-export function getDisplayConfidence({
+function getDisplayConfidence({
   confidence,
   identificationConfidence,
   valuationConfidence,
@@ -53,11 +53,6 @@ export function ConfidenceBadge(props: ConfidenceBadgeProps) {
     </View>
   );
 }
-
-export function isLowConfidence(input: ConfidenceInput): boolean {
-  return getDisplayConfidence(input) < LOW_CONFIDENCE;
-}
-
 function createStyles(colors: ThemeColors, isDark: boolean) {
   return StyleSheet.create({
     badge: {

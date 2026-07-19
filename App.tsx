@@ -5,7 +5,6 @@ import { SafeAreaProvider } from 'react-native-safe-area-context';
 
 import { Logo } from '@/components/brand/Logo';
 import { AppText } from '@/components/ui/Button';
-import { ModelPresetProvider } from '@/context/ModelPresetContext';
 import { CurrencyProvider } from '@/context/CurrencyContext';
 import { ThemeProvider, useTheme } from '@/context/ThemeContext';
 import { RootNavigator } from '@/navigation/RootNavigator';
@@ -28,11 +27,9 @@ function AppShell() {
         backgroundColor={colors.background}
       />
       {isReady ? (
-        <ModelPresetProvider>
-          <CurrencyProvider>
-            <RootNavigator />
-          </CurrencyProvider>
-        </ModelPresetProvider>
+        <CurrencyProvider>
+          <RootNavigator />
+        </CurrencyProvider>
       ) : (
         <View style={styles.loading}>
           <Logo size="lg" />
@@ -44,9 +41,15 @@ function AppShell() {
   );
 }
 
+const rootStyles = StyleSheet.create({
+  root: {
+    flex: 1,
+  },
+});
+
 export default function App() {
   return (
-    <GestureHandlerRootView style={{ flex: 1 }}>
+    <GestureHandlerRootView style={rootStyles.root}>
       <SafeAreaProvider>
         <ThemeProvider>
           <AppShell />

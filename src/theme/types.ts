@@ -26,11 +26,3 @@ export type ThemeColors = {
   dangerSoft: string;
   shadow: string;
 };
-
-/** Logo spectrum stops — gold → magenta → violet → teal */
-export type BrandStops = {
-  gold: string;
-  magenta: string;
-  violet: string;
-  teal: string;
-};

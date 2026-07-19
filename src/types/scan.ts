@@ -72,9 +72,3 @@ export type ScanResult = {
   modelPreset?: string;
   modelId?: string;
 };
-
-export type PersonalizationProfile = {
-  annualIncome?: number;
-  countryCode: string;
-  age?: number;
-};

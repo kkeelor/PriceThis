@@ -32,7 +32,7 @@ export function AppUpdateSection({ active }: AppUpdateSectionProps) {
 
   useEffect(() => {
     if (active) {
-      void refreshCheck();
+      refreshCheck();
     }
   }, [active, refreshCheck]);
 
@@ -48,11 +48,11 @@ export function AppUpdateSection({ active }: AppUpdateSectionProps) {
 
   const handlePress = () => {
     if (updateAvailable && !isBusy) {
-      void downloadUpdate();
+      downloadUpdate();
       return;
     }
     if (!isBusy) {
-      void refreshCheck();
+      refreshCheck();
     }
   };
 

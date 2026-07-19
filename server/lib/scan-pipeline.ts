@@ -1,12 +1,4 @@
 import {
-  refineImageValuationWithClaude,
-  refineTextValuationWithClaude,
-  scanImageLegacy,
-  scanImageWithClaude,
-  scanTextLegacy,
-  scanTextWithClaude,
-} from './claude.js';
-import {
   refineImageValuationWithGemini,
   refineTextValuationWithGemini,
   scanImageWithGemini,
@@ -23,7 +15,6 @@ import {
 } from './scan-gates.js';
 import { isGeminiConfigured, resolveScanTarget, type ScanProvider } from './resolve-scan.js';
 import type { ScanApiResponse } from './types.js';
-import { isWebSearchEnabled } from './web-search.js';
 
 export type PipelineMeta = {
   enabled: boolean;
@@ -33,8 +24,6 @@ export type PipelineMeta = {
   valueGate: ValueGateResult | 'skipped';
   searchUsed: boolean;
   inferenceCalls: number;
-  /** @deprecated Use inferenceCalls */
-  claudeCalls: number;
   durationMs: number;
 };
 
@@ -92,19 +81,12 @@ async function runStage1Image(
   target: ReturnType<typeof resolveScanTarget>,
   params: { imageBase64: string } & SharedScanParams,
 ): Promise<ScanApiResponse> {
-  if (target.provider === 'gemini') {
-    if (!isGeminiConfigured()) {
-      throw new Error('GEMINI_API_KEY is not configured');
-    }
-    return scanImageWithGemini({
-      ...params,
-      model: target.modelId,
-    });
+  if (!isGeminiConfigured()) {
+    throw new Error('GEMINI_API_KEY is not configured');
   }
-
-  return scanImageWithClaude({
+  return scanImageWithGemini({
     ...params,
-    enableWebSearch: false,
+    model: target.modelId,
   });
 }
 
@@ -112,19 +94,12 @@ async function runStage1Text(
   target: ReturnType<typeof resolveScanTarget>,
   params: { query: string } & SharedScanParams,
 ): Promise<ScanApiResponse> {
-  if (target.provider === 'gemini') {
-    if (!isGeminiConfigured()) {
-      throw new Error('GEMINI_API_KEY is not configured');
-    }
-    return scanTextWithGemini({
-      ...params,
-      model: target.modelId,
-    });
+  if (!isGeminiConfigured()) {
+    throw new Error('GEMINI_API_KEY is not configured');
   }
-
-  return scanTextWithClaude({
+  return scanTextWithGemini({
     ...params,
-    enableWebSearch: false,
+    model: target.modelId,
   });
 }
 
@@ -148,7 +123,6 @@ async function runPipelineAfterStage1(
     valueGate: 'skipped',
     searchUsed: false,
     inferenceCalls: 1,
-    claudeCalls: target.provider === 'claude' ? 1 : 0,
     durationMs: 0,
   };
 
@@ -161,9 +135,7 @@ async function runPipelineAfterStage1(
   const valueGate = evaluateValueGate(normalizedStage1, config);
   meta.valueGate = valueGate;
 
-  const shouldSearch =
-    valueGate === 'fail' &&
-    (target.provider === 'claude' ? isWebSearchEnabled() : true);
+  const shouldSearch = valueGate === 'fail';
 
   if (!shouldSearch) {
     meta.durationMs = Date.now() - started;
@@ -171,11 +143,10 @@ async function runPipelineAfterStage1(
     return { result: normalizedStage1, pipeline: meta };
   }
 
-  meta.stages.push(target.provider === 'claude' ? 'stage3-search' : 'stage3-refine');
+  meta.stages.push('stage3-refine');
   const refined = normalizeScanResponse(await searchRunner());
-  meta.searchUsed = target.provider === 'claude';
+  meta.searchUsed = false;
   meta.inferenceCalls = 2;
-  meta.claudeCalls = target.provider === 'claude' ? 2 : 0;
   meta.durationMs = Date.now() - started;
 
   logPipelineTelemetry({ ...meta, modality });
@@ -192,21 +163,20 @@ export async function runImageScanPipeline(params: {
 
   if (!isPipelineEnabled()) {
     const started = Date.now();
-    const result =
-      target.provider === 'gemini'
-        ? normalizeScanResponse(
-            await scanImageWithGemini({ ...params, model: target.modelId }),
-          )
-        : normalizeScanResponse(await scanImageLegacy(params));
+    if (!isGeminiConfigured()) {
+      throw new Error('GEMINI_API_KEY is not configured');
+    }
+    const result = normalizeScanResponse(
+      await scanImageWithGemini({ ...params, model: target.modelId }),
+    );
     const pipeline: PipelineMeta = {
       enabled: false,
       provider: target.provider,
       stages: ['legacy'],
       idGate: 'pass',
       valueGate: 'skipped',
-      searchUsed: target.provider === 'claude' && isWebSearchEnabled(),
+      searchUsed: false,
       inferenceCalls: 1,
-      claudeCalls: target.provider === 'claude' ? 1 : 0,
       durationMs: Date.now() - started,
     };
     logPipelineTelemetry({ ...pipeline, modality: 'image' });
@@ -221,23 +191,14 @@ export async function runImageScanPipeline(params: {
     target,
     params,
     () =>
-      target.provider === 'gemini'
-        ? refineImageValuationWithGemini({
-            imageBase64: params.imageBase64,
-            stage1: normalizeScanResponse(stage1),
-            locale: params.locale,
-            currencyCode: params.currencyCode,
-            countryCode: params.countryCode,
-            model: target.modelId,
-          })
-        : refineImageValuationWithClaude({
-            imageBase64: params.imageBase64,
-            stage1: normalizeScanResponse(stage1),
-            locale: params.locale,
-            currencyCode: params.currencyCode,
-            countryCode: params.countryCode,
-            model: params.model,
-          }),
+      refineImageValuationWithGemini({
+        imageBase64: params.imageBase64,
+        stage1: normalizeScanResponse(stage1),
+        locale: params.locale,
+        currencyCode: params.currencyCode,
+        countryCode: params.countryCode,
+        model: target.modelId,
+      }),
   );
 }
 
@@ -248,21 +209,20 @@ export async function runTextScanPipeline(params: {
 
   if (!isPipelineEnabled()) {
     const started = Date.now();
-    const result =
-      target.provider === 'gemini'
-        ? normalizeScanResponse(
-            await scanTextWithGemini({ ...params, model: target.modelId }),
-          )
-        : normalizeScanResponse(await scanTextLegacy(params));
+    if (!isGeminiConfigured()) {
+      throw new Error('GEMINI_API_KEY is not configured');
+    }
+    const result = normalizeScanResponse(
+      await scanTextWithGemini({ ...params, model: target.modelId }),
+    );
     const pipeline: PipelineMeta = {
       enabled: false,
       provider: target.provider,
       stages: ['legacy'],
       idGate: 'pass',
       valueGate: 'skipped',
-      searchUsed: target.provider === 'claude' && isWebSearchEnabled(),
+      searchUsed: false,
       inferenceCalls: 1,
-      claudeCalls: target.provider === 'claude' ? 1 : 0,
       durationMs: Date.now() - started,
     };
     logPipelineTelemetry({ ...pipeline, modality: 'text' });
@@ -277,24 +237,14 @@ export async function runTextScanPipeline(params: {
     target,
     params,
     () =>
-      target.provider === 'gemini'
-        ? refineTextValuationWithGemini({
-            query: params.query,
-            stage1: normalizeScanResponse(stage1),
-            locale: params.locale,
-            currencyCode: params.currencyCode,
-            countryCode: params.countryCode,
-            marketContext: params.marketContext,
-            model: target.modelId,
-          })
-        : refineTextValuationWithClaude({
-            query: params.query,
-            stage1: normalizeScanResponse(stage1),
-            locale: params.locale,
-            currencyCode: params.currencyCode,
-            countryCode: params.countryCode,
-            marketContext: params.marketContext,
-            model: params.model,
-          }),
+      refineTextValuationWithGemini({
+        query: params.query,
+        stage1: normalizeScanResponse(stage1),
+        locale: params.locale,
+        currencyCode: params.currencyCode,
+        countryCode: params.countryCode,
+        marketContext: params.marketContext,
+        model: target.modelId,
+      }),
   );
 }

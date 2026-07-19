@@ -101,7 +101,7 @@ export function ResultScreen({ navigation, route }: ResultScreenProps) {
 
   const handleAlternativeSelect = useCallback(
     (name: string) => {
-      void runTextScanWithHero(name, initialResult.heroImageUri);
+      runTextScanWithHero(name, initialResult.heroImageUri);
     },
     [initialResult.heroImageUri, runTextScanWithHero],
   );
@@ -172,7 +172,7 @@ export function ResultScreen({ navigation, route }: ResultScreenProps) {
             <Button
               label="Share"
               variant="ghost"
-              onPress={() => void handleShare()}
+              onPress={() => handleShare()}
               style={styles.chromeButton}
             />
           </View>

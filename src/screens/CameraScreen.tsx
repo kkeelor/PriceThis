@@ -3,6 +3,7 @@ import {
   ActivityIndicator,
   Alert,
   LayoutChangeEvent,
+  Linking,
   StyleSheet,
   View,
 } from 'react-native';
@@ -16,19 +17,17 @@ import {
 } from 'react-native-vision-camera';
 
 import { CameraViewfinder } from '@/components/camera/CameraViewfinder';
-import { CameraZoomControls } from '@/components/camera/CameraZoomControls';
 import { ScanningOverlay } from '@/components/ui/ScanningOverlay';
 import { AppText, Button } from '@/components/ui/Button';
 import { Screen } from '@/components/ui/Screen';
 import { useTheme } from '@/context/ThemeContext';
 import { useResponsiveLayout } from '@/hooks/useResponsiveLayout';
 import { useScan } from '@/hooks/useScan';
-import { useVolumeShutter } from '@/hooks/useVolumeShutter';
 import type { CameraScreenProps } from '@/navigation/types';
 import { spacing, typography } from '@/theme';
 import type { ThemeColors } from '@/theme/types';
 import { arrayBufferToBase64 } from '@/utils/base64';
-import { computeOneXZoom, resolveDefaultZoom } from '@/utils/cameraZoom';
+import { resolveDefaultZoom } from '@/utils/cameraZoom';
 
 type PreviewLayout = {
   width: number;
@@ -55,13 +54,10 @@ export function CameraScreen({ navigation }: CameraScreenProps) {
     quality: 0.7,
     qualityPrioritization: 'speed',
   });
-  const { hasPermission, requestPermission } = useCameraPermission();
+  const { hasPermission, canRequestPermission, requestPermission } = useCameraPermission();
   const [isReady, setIsReady] = useState(false);
+  const [cameraLookupTimedOut, setCameraLookupTimedOut] = useState(false);
   const [previewLayout, setPreviewLayout] = useState<PreviewLayout | null>(null);
-  const [zoom, setZoom] = useState(1);
-  const [zoomLimits, setZoomLimits] = useState({ min: 1, max: 1 });
-  const [oneXZoom, setOneXZoom] = useState(1);
-
   const { isScanning, runImageScan } = useScan({
     onSuccess: result => {
       navigation.replace('Result', { result });
@@ -69,10 +65,20 @@ export function CameraScreen({ navigation }: CameraScreenProps) {
   });
 
   useEffect(() => {
-    if (!hasPermission) {
-      void requestPermission();
+    if (!hasPermission && canRequestPermission) {
+      requestPermission();
     }
-  }, [hasPermission, requestPermission]);
+  }, [canRequestPermission, hasPermission, requestPermission]);
+
+  useEffect(() => {
+    if (device || !hasPermission) {
+      setCameraLookupTimedOut(false);
+      return;
+    }
+
+    const timer = setTimeout(() => setCameraLookupTimedOut(true), 1500);
+    return () => clearTimeout(timer);
+  }, [device, hasPermission]);
 
   const applyDefaultZoom = useCallback(async () => {
     const controller = cameraRef.current?.controller;
@@ -80,25 +86,22 @@ export function CameraScreen({ navigation }: CameraScreenProps) {
       return;
     }
 
-    const reference = computeOneXZoom(controller);
     const targetZoom = resolveDefaultZoom(controller);
     await controller.setZoom(targetZoom);
     await waitForNextFrame();
-
-    const settledReference = computeOneXZoom(controller);
-    const oneX = settledReference > 0 ? settledReference : reference;
-
-    setOneXZoom(oneX);
-    setZoom(controller.zoom);
-    setZoomLimits({
-      min: oneX,
-      max: controller.maxZoom,
-    });
   }, []);
 
   const handleClose = useCallback(() => {
     navigation.goBack();
   }, [navigation]);
+
+  const handlePermission = useCallback(() => {
+    if (canRequestPermission) {
+      requestPermission();
+      return;
+    }
+    Linking.openSettings();
+  }, [canRequestPermission, requestPermission]);
 
   const handleScan = useCallback(async () => {
     if (!isReady || isScanning || isCapturingRef.current) {
@@ -114,10 +117,15 @@ export function CameraScreen({ navigation }: CameraScreenProps) {
 
     try {
       const photo = await photoOutput.capturePhoto({}, {});
-      const fileData = await photo.getFileDataAsync();
-      const imageBase64 = arrayBufferToBase64(fileData);
-      const tempPath = await photo.saveToTemporaryFileAsync();
-      photo.dispose();
+      let imageBase64: string;
+      let tempPath: string;
+      try {
+        const fileData = await photo.getFileDataAsync();
+        imageBase64 = arrayBufferToBase64(fileData);
+        tempPath = await photo.saveToTemporaryFileAsync();
+      } finally {
+        photo.dispose();
+      }
       await runImageScan(imageBase64, {
         heroImageUri: `file://${tempPath}`,
         source: 'camera',
@@ -131,15 +139,8 @@ export function CameraScreen({ navigation }: CameraScreenProps) {
     }
   }, [isReady, isScanning, photoOutput, runImageScan]);
 
-  useVolumeShutter({
-    enabled: isReady && !isScanning,
-    onCapture: () => {
-      void handleScan();
-    },
-  });
-
   const handlePreviewStarted = useCallback(() => {
-    void applyDefaultZoom().finally(() => {
+    applyDefaultZoom().finally(() => {
       setIsReady(true);
     });
   }, [applyDefaultZoom]);
@@ -158,23 +159,20 @@ export function CameraScreen({ navigation }: CameraScreenProps) {
     });
   }, []);
 
-  const handleZoomChange = useCallback(
-    (nextZoom: number) => {
-      const clamped = Math.min(zoomLimits.max, Math.max(zoomLimits.min, nextZoom));
-      setZoom(clamped);
-      void cameraRef.current?.controller?.setZoom(clamped);
-    },
-    [zoomLimits.max, zoomLimits.min],
-  );
-
   if (!hasPermission) {
     return (
       <Screen safeBottom>
         <View style={styles.centered}>
           <AppText style={styles.message}>
-            Camera access is required to scan objects.
+            {canRequestPermission
+              ? 'Camera access is required to scan objects.'
+              : 'Camera access is disabled. Enable it in system settings to scan objects.'}
           </AppText>
-          <Button label="Grant permission" onPress={() => void requestPermission()} />
+          <Button
+            label={canRequestPermission ? 'Grant permission' : 'Open settings'}
+            onPress={handlePermission}
+          />
+          <Button label="Search instead" onPress={() => navigation.navigate('Search')} />
           <Button label="Go back" variant="ghost" onPress={handleClose} />
         </View>
       </Screen>
@@ -185,8 +183,20 @@ export function CameraScreen({ navigation }: CameraScreenProps) {
     return (
       <Screen safeBottom>
         <View style={styles.centered}>
-          <ActivityIndicator color={colors.accent} size="large" />
-          <AppText style={styles.message}>Starting camera…</AppText>
+          {cameraLookupTimedOut ? (
+            <>
+              <AppText style={styles.message}>
+                No compatible rear camera was found on this device.
+              </AppText>
+              <Button label="Search instead" onPress={() => navigation.navigate('Search')} />
+              <Button label="Go back" variant="ghost" onPress={handleClose} />
+            </>
+          ) : (
+            <>
+              <ActivityIndicator color={colors.accent} size="large" />
+              <AppText style={styles.message}>Starting camera…</AppText>
+            </>
+          )}
         </View>
       </Screen>
     );
@@ -194,8 +204,6 @@ export function CameraScreen({ navigation }: CameraScreenProps) {
 
   const topPad = Math.max(insets.top, spacing.md);
   const bottomPad = Math.max(insets.bottom, spacing.md);
-  const zoomBottom = bottomPad + (isShort ? 118 : 168);
-
   return (
     <View style={styles.container} onLayout={handlePreviewLayout}>
       <ScanningOverlay visible={isScanning} message="Identifying object…" />
@@ -203,18 +211,16 @@ export function CameraScreen({ navigation }: CameraScreenProps) {
       {previewLayout ? (
         <Camera
           ref={cameraRef}
-          style={{
-            position: 'absolute',
-            top: 0,
-            left: 0,
-            width: previewLayout.width,
-            height: previewLayout.height,
-          }}
+          style={[
+            styles.preview,
+            { width: previewLayout.width, height: previewLayout.height },
+          ]}
           device={device}
           isActive={!isScanning}
           outputs={[photoOutput]}
           resizeMode="cover"
           implementationMode="compatible"
+          enableNativeZoomGesture
           onPreviewStarted={handlePreviewStarted}
         />
       ) : null}
@@ -233,22 +239,11 @@ export function CameraScreen({ navigation }: CameraScreenProps) {
           />
         </View>
 
-        <View style={[styles.zoomSlot, { bottom: zoomBottom }]} pointerEvents="box-none">
-          <CameraZoomControls
-            zoom={zoom}
-            minZoom={zoomLimits.min}
-            maxZoom={zoomLimits.max}
-            oneXZoom={oneXZoom}
-            disabled={!isReady || isScanning}
-            onZoomChange={handleZoomChange}
-          />
-        </View>
-
         <View style={[styles.bottomBar, { paddingBottom: bottomPad }]}>
           {!isShort ? (
             <AppText style={styles.hint} numberOfLines={2}>
               {isReady
-                ? 'Slide to zoom · volume buttons also capture'
+                ? 'Pinch to zoom · use the scan button to capture'
                 : 'Opening camera…'}
             </AppText>
           ) : null}
@@ -256,7 +251,7 @@ export function CameraScreen({ navigation }: CameraScreenProps) {
             label={isScanning ? 'Scanning…' : 'Tap to Scan'}
             disabled={!isReady || isScanning}
             fullWidth
-            onPress={() => void handleScan()}
+            onPress={() => handleScan()}
           />
           <Button
             label="Search instead"
@@ -276,18 +271,17 @@ function createStyles(colors: ThemeColors) {
       flex: 1,
       backgroundColor: '#000000',
     },
+    preview: {
+      position: 'absolute',
+      top: 0,
+      left: 0,
+    },
     overlay: {
       ...StyleSheet.absoluteFill,
       justifyContent: 'space-between',
     },
     topBar: {
       alignItems: 'flex-start',
-    },
-    zoomSlot: {
-      position: 'absolute',
-      left: 0,
-      right: 0,
-      alignItems: 'center',
     },
     bottomBar: {
       gap: spacing.sm,

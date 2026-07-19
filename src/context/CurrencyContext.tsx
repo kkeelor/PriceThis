@@ -58,7 +58,7 @@ export function CurrencyProvider({ children }: { children: ReactNode }) {
   }, []);
 
   useEffect(() => {
-    void refreshRates();
+    refreshRates();
   }, [refreshRates]);
 
   const setCurrency = useCallback((code: SupportedCurrencyCode) => {
@@ -69,7 +69,7 @@ export function CurrencyProvider({ children }: { children: ReactNode }) {
   const rates = snapshot?.rates ?? getDefaultRates();
 
   const convertAndFormat = useCallback(
-    (amount: number, fromCurrency = currencyCode) => {
+    (amount: number, fromCurrency: string = currencyCode) => {
       const converted = convertAmount(amount, fromCurrency, currencyCode, rates);
       return formatCurrency(converted, currencyCode, getDeviceLocale());
     },

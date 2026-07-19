@@ -1,6 +1,6 @@
 /**
  * Optional market-data enrichment layer.
- * v1 uses Claude as primary source; this hook can be wired to public APIs
+ * v1 uses Gemini as the primary source; this hook can be wired to public APIs
  * (e.g. vehicle listings, watch indexes) when a confident match exists.
  */
 export async function getMarketContextForQuery(query: string): Promise<string | undefined> {

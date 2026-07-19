@@ -180,13 +180,6 @@ export function setFavoriteCategory(scanId: string, categoryId: string): void {
   );
 }
 
-export function getFavoriteScans(): ScanResult[] {
-  return readRecords()
-    .map(record => getScanById(record.scanId))
-    .filter((scan): scan is ScanResult => scan != null)
-    .sort((a, b) => b.createdAt - a.createdAt);
-}
-
 export function getFavoritesGroupedByCategory(): Array<{
   category: FavoriteCategory;
   scans: ScanResult[];

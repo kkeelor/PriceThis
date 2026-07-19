@@ -5,7 +5,7 @@
 ```bash
 git init   # if not already done
 git add .
-git commit -m "Initial commit: PriceThis mobile app + Claude API"
+git commit -m "Initial commit: PriceThis mobile app + Gemini API"
 git branch -M main
 git remote add origin https://github.com/YOUR_USER/PriceThis.git
 git push -u origin main
@@ -26,18 +26,9 @@ git push -u origin main
 
 | Variable | Value | Notes |
 |----------|-------|-------|
-| `ANTHROPIC_API_KEY` | `sk-ant-...` | **Required** for Claude presets |
-| `GEMINI_API_KEY` | `AQ....` | **Required** — default provider (Gemini Flash-Lite) |
-| `GEMINI_MODEL` | `gemini-3.1-flash-lite` | Default model; also used for presets `gemini` / `default` |
-| `CLAUDE_MODEL` | `claude-haiku-4-5` | Used when a Claude preset is requested explicitly |
-| `CLAUDE_MODEL_SONNET` | `claude-sonnet-4-6` | Preset: `sonnet` |
-| `CLAUDE_MODEL_OPUS` | `claude-opus-4-6` | Preset: `opus` |
-| `CLAUDE_MODEL_HAIKU` | `claude-haiku-4-5` | Preset: `haiku` |
-| `CLAUDE_MODEL_FAST` | `claude-haiku-4-5` | Preset: `fast` (alias for quick/cheap tests) |
-| `CLAUDE_MODEL_QUALITY` | `claude-opus-4-6` | Preset: `quality` (alias for best quality) |
-| `CLAUDE_WEB_SEARCH` | `true` | Enable Claude web search for price grounding (set `false` to disable) |
-| `WEB_SEARCH_MAX_USES` | `1` | Max searches per scan (cost + latency cap) |
-| `SCAN_PIPELINE` | `true` | Progressive pipeline: Stage 1 without search, then gated search |
+| `GEMINI_API_KEY` | `AQ....` | **Required** — Gemini Flash-Lite |
+| `GEMINI_MODEL` | `gemini-3.1-flash-lite` | Optional Gemini model ID override |
+| `SCAN_PIPELINE` | `true` | Progressive pipeline: Stage 1 followed by gated valuation refinement |
 | `SCAN_ID_FAIL_FLOOR` | `50` | Below this identification score → too weak to price (no search) |
 | `SCAN_SEARCH_THRESHOLD` | `70` | Search when **valuation** confidence is below this |
 | `SCAN_CATEGORY_SEARCH_THRESHOLD` | `75` | Stricter search bar for watches, art, cars, etc. |
@@ -46,29 +37,20 @@ git push -u origin main
 
 After changing env vars, **redeploy** on Vercel.
 
-### Switch models on the fly
+### Confirm the configured model
 
-List configured presets:
+The API exposes Gemini as the only configured model:
 
 ```bash
 curl https://your-project.vercel.app/api/models
 ```
 
-Use a preset in a scan request:
+Scan requests use Gemini by default. The optional model field only accepts `gemini`:
 
 ```bash
 curl -X POST https://your-project.vercel.app/api/scan/text \
   -H "Content-Type: application/json" \
-  -d '{"query":"Rolex Submariner","locale":"en-US","currencyCode":"USD","model":"opus"}'
-```
-
-Or via header:
-
-```bash
-curl -X POST https://your-project.vercel.app/api/scan/text \
-  -H "Content-Type: application/json" \
-  -H "X-Claude-Model: haiku" \
-  -d '{"query":"Rolex Submariner","locale":"en-US","currencyCode":"USD"}'
+  -d '{"query":"Rolex Submariner","locale":"en-US","currencyCode":"USD","model":"gemini"}'
 ```
 
 Responses include `meta.modelId` and `meta.preset` so you can confirm which model ran.

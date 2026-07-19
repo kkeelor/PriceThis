@@ -1,71 +1,57 @@
-import { Pressable, StyleSheet, View } from 'react-native';
+import { StyleSheet, View } from 'react-native';
 
-import { SettingsDisclosure } from '@/components/settings/SettingsDisclosure';
 import { AppText } from '@/components/ui/Button';
-import { useModelPreset } from '@/context/ModelPresetContext';
 import { useTheme } from '@/context/ThemeContext';
 import { radii, spacing, typography } from '@/theme';
 import type { ThemeColors } from '@/theme/types';
-import {
-  MODEL_PRESET_LABELS,
-  MODEL_PRESETS,
-  type ModelPreset,
-} from '@/types/model';
 
 export function ModelSettingSection() {
   const { colors, isDark } = useTheme();
   const styles = createStyles(colors, isDark);
-  const { preset, setPreset } = useModelPreset();
 
   return (
-    <SettingsDisclosure
-      title="AI model"
-      summary={MODEL_PRESET_LABELS[preset]}>
-      <View style={styles.list}>
-        {MODEL_PRESETS.map((option: ModelPreset) => {
-          const selected = preset === option;
-          return (
-            <Pressable
-              key={option}
-              accessibilityRole="button"
-              accessibilityState={{ selected }}
-              onPress={() => setPreset(option)}
-              style={[styles.option, selected && styles.optionSelected]}>
-              <AppText
-                style={[styles.optionLabel, selected && styles.optionLabelSelected]}
-                numberOfLines={2}>
-                {MODEL_PRESET_LABELS[option]}
-              </AppText>
-            </Pressable>
-          );
-        })}
+    <View style={styles.card}>
+      <View style={styles.text}>
+        <AppText style={styles.title}>AI model</AppText>
+        <AppText style={styles.summary} numberOfLines={1}>
+          Gemini Flash-Lite
+        </AppText>
       </View>
-    </SettingsDisclosure>
+    </View>
   );
 }
 
-function createStyles(colors: ThemeColors, _isDark: boolean) {
+function createStyles(colors: ThemeColors, isDark: boolean) {
   return StyleSheet.create({
-    list: {
-      gap: spacing.xs,
-    },
-    option: {
-      minHeight: 44,
-      borderRadius: radii.sm,
+    card: {
+      minHeight: 56,
+      borderRadius: radii.md,
+      borderWidth: isDark ? 1 : StyleSheet.hairlineWidth,
+      borderColor: colors.border,
+      backgroundColor: colors.surface,
       paddingHorizontal: spacing.md,
       paddingVertical: spacing.sm,
       justifyContent: 'center',
+      ...(isDark
+        ? {}
+        : {
+            shadowColor: colors.shadow,
+            shadowOffset: { width: 0, height: 1 },
+            shadowOpacity: 0.04,
+            shadowRadius: 4,
+            elevation: 1,
+          }),
     },
-    optionSelected: {
-      backgroundColor: colors.accentSoft,
+    text: {
+      gap: 2,
     },
-    optionLabel: {
-      ...typography.body,
+    title: {
+      ...typography.bodyStrong,
       color: colors.textPrimary,
     },
-    optionLabelSelected: {
-      color: colors.accent,
-      fontWeight: '600',
+    summary: {
+      ...typography.caption,
+      color: colors.textSecondary,
     },
   });
 }

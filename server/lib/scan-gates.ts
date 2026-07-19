@@ -21,13 +21,7 @@ export type GateConfig = {
   strictCategories: Set<string>;
 };
 
-const DEFAULT_STRICT_CATEGORIES = new Set([
-  'watches',
-  'art',
-  'cars',
-  'collectibles',
-  'real_estate',
-]);
+const DEFAULT_STRICT_CATEGORIES = 'watches,art,cars,collectibles,real_estate';
 
 function parseThreshold(name: string, fallback: number): number {
   const raw = process.env[name]?.trim();
@@ -51,7 +45,7 @@ function clampConfidence(value: number): number {
 export function getGateConfig(): GateConfig {
   const strictList =
     process.env.SCAN_CATEGORY_STRICT_CATEGORIES?.trim() ||
-    'watches,art,cars,collectibles,real_estate';
+    DEFAULT_STRICT_CATEGORIES;
 
   return {
     idFailFloor: parseThreshold('SCAN_ID_FAIL_FLOOR', 50),

@@ -60,7 +60,7 @@ export type PendingScanResult = ScanResult & {
 
 export async function scanByText(
   query: string,
-  model?: string,
+  model?: 'gemini',
 ): Promise<PendingScanResult> {
   const response = await apiClient.scanText({
     query,
@@ -86,7 +86,7 @@ export async function scanByImage(
   options?: {
     heroImageUri?: string;
     source?: ScanResult['source'];
-    model?: string;
+    model?: 'gemini';
   },
 ): Promise<ScanResult> {
   const response = await apiClient.scanImage({
