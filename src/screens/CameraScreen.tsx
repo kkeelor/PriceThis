@@ -243,7 +243,7 @@ export function CameraScreen({ navigation }: CameraScreenProps) {
           {!isShort ? (
             <AppText style={styles.hint} numberOfLines={2}>
               {isReady
-                ? 'Pinch to zoom · use the scan button to capture'
+                ? 'Good light · include the brand if you see it'
                 : 'Opening camera…'}
             </AppText>
           ) : null}

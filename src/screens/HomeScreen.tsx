@@ -11,7 +11,6 @@ import { launchImageLibrary } from 'react-native-image-picker';
 
 import { Logo } from '@/components/brand/Logo';
 import { SpectrumFill } from '@/components/brand/Spectrum';
-import { TryExampleChips } from '@/components/home/TryExampleChips';
 import { CameraIcon } from '@/components/icons/CameraIcon';
 import { SettingsMenu } from '@/components/settings/SettingsMenu';
 import { AppText, Button } from '@/components/ui/Button';
@@ -148,19 +147,12 @@ export function HomeScreen({ navigation }: HomeScreenProps) {
           <AppText style={styles.tagline}>
             The Shazam for prices.
           </AppText>
-          <AppText style={styles.helper}>
-            Point your camera or search by name to discover what things are worth.
-          </AppText>
         </View>
 
         <SearchBar
           editable={false}
           placeholder="Search by name…"
           onPress={() => navigation.navigate('Search')}
-        />
-
-        <TryExampleChips
-          onSelect={query => navigation.navigate('Search', { initialQuery: query })}
         />
 
         <View style={styles.scanSection}>
@@ -180,7 +172,7 @@ export function HomeScreen({ navigation }: HomeScreenProps) {
               <CameraIcon size={isCompact ? 32 : 36} color={colors.textOnAccent} />
             </Pressable>
           </View>
-          <AppText style={styles.cameraHint}>Tap to scan or upload</AppText>
+          <AppText style={styles.cameraHint}>Tap to check a price</AppText>
         </View>
 
         <Modal
@@ -229,7 +221,7 @@ function createStyles(colors: ThemeColors, isDark: boolean, cameraButtonSize: nu
     },
     header: {
       marginTop: spacing.md,
-      marginBottom: spacing.lg,
+      marginBottom: spacing.sm,
       gap: spacing.sm,
       alignItems: 'center',
     },
@@ -244,23 +236,15 @@ function createStyles(colors: ThemeColors, isDark: boolean, cameraButtonSize: nu
     tagline: {
       ...typography.body,
       color: colors.textSecondary,
-      marginBottom: spacing.md,
       textAlign: 'center',
-    },
-    helper: {
-      ...typography.caption,
-      color: colors.textMuted,
-      lineHeight: 20,
-      textAlign: 'center',
-      maxWidth: 420,
-      alignSelf: 'center',
-      width: '100%',
     },
     scanSection: {
       alignItems: 'center',
       gap: spacing.sm,
-      marginTop: spacing.xl,
+      marginTop: spacing.xxl,
       marginBottom: spacing.lg,
+      flexGrow: 1,
+      justifyContent: 'center',
     },
     cameraAnchor: {
       width: cameraButtonSize,
