@@ -1,6 +1,6 @@
 import { useCallback, useState } from 'react';
 import { Pressable, RefreshControl, ScrollView, StyleSheet, View } from 'react-native';
-import { History } from 'lucide-react-native';
+import { History, Trash2 } from 'lucide-react-native';
 
 import { RecentScanRow } from '@/components/home/RecentScanRow';
 import { AppText, Button } from '@/components/ui/Button';
@@ -61,7 +61,7 @@ export function HistoryScreen({ navigation }: HistoryScreenProps) {
                 onPress={() => setClearConfirmOpen(true)}
                 hitSlop={8}
                 style={styles.clearAllButton}>
-                <AppText style={styles.trashHeaderIcon}>🗑</AppText>
+                <Trash2 color={colors.danger} size={18} strokeWidth={2} />
               </Pressable>
             ) : null}
           </View>
@@ -149,9 +149,6 @@ function createStyles(colors: ThemeColors) {
       justifyContent: 'center',
       backgroundColor: colors.dangerSoft,
       flexShrink: 0,
-    },
-    trashHeaderIcon: {
-      fontSize: 18,
     },
     subtitle: {
       ...typography.body,

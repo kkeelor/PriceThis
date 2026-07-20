@@ -50,6 +50,7 @@ export function SearchBar({
     <View style={styles.shell}>
       <TextInput
         ref={inputRef}
+        accessibilityLabel="Search by name"
         autoFocus={autoFocus}
         editable={editable}
         placeholder={placeholder}

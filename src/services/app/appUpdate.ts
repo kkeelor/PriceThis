@@ -203,20 +203,40 @@ async function tryRecoverInterruptedDownload(
   }
 }
 
+function createMonotonicProgressReporter(
+  onProgress?: (progress: number) => void,
+): (progress: number) => void {
+  let last = 0;
+  return (progress: number) => {
+    if (!onProgress) {
+      return;
+    }
+
+    const next = Math.min(Math.max(progress, 0), 1);
+    if (next < last) {
+      return;
+    }
+
+    last = next;
+    onProgress(next);
+  };
+}
+
 function startFileProgressPolling(
   path: string,
   expectedSize: number | null,
-  onProgress?: (progress: number) => void,
+  onProgress: (progress: number) => void,
+  shouldSkip: () => boolean,
 ): () => void {
-  if (!onProgress) {
-    return () => undefined;
-  }
-
   const interval = setInterval(() => {
+    if (shouldSkip()) {
+      return;
+    }
+
     ReactNativeBlobUtil.fs
       .stat(path)
       .then(stat => {
-        if (stat.size <= 0) {
+        if (shouldSkip() || stat.size <= 0) {
           return;
         }
 
@@ -294,16 +314,38 @@ async function runBlobDownload(
   await ReactNativeBlobUtil.fs.unlink(path).catch(() => undefined);
 
   const task = createTask();
+  const reportProgress = handlers?.onProgress;
+  let hasStreamProgress = false;
 
   task.progress((received, total) => {
+    if (!reportProgress) {
+      return;
+    }
+
     const receivedNum = Number(received);
     const totalNum = Number(total);
+
     if (totalNum > 0) {
-      handlers?.onProgress?.(receivedNum / totalNum);
+      hasStreamProgress = true;
+      reportProgress(Math.min(receivedNum / totalNum, 0.99));
+      return;
+    }
+
+    if (expectedSize && expectedSize > 0 && receivedNum > 0) {
+      hasStreamProgress = true;
+      reportProgress(Math.min(receivedNum / expectedSize, 0.99));
     }
   });
 
-  const stopPolling = startFileProgressPolling(path, expectedSize, handlers?.onProgress);
+  // Poll file size only when the fetch stream does not report totals (avoids dual flashes).
+  const stopPolling = reportProgress
+    ? startFileProgressPolling(
+        path,
+        expectedSize,
+        reportProgress,
+        () => hasStreamProgress,
+      )
+    : () => undefined;
 
   try {
     const result = await Promise.race([
@@ -322,7 +364,7 @@ async function runBlobDownload(
     ) {
       const recovered = await tryRecoverInterruptedDownload(path, expectedSize);
       if (recovered) {
-        handlers?.onProgress?.(1);
+        reportProgress?.(1);
         return recovered;
       }
     }
@@ -400,6 +442,12 @@ export async function downloadAndInstallUpdate(
   handlers?.onPhase?.('downloading');
   handlers?.onStatus?.('Preparing download…');
 
+  const reportProgress = createMonotonicProgressReporter(handlers?.onProgress);
+  const progressHandlers: UpdateDownloadHandlers = {
+    ...handlers,
+    onProgress: reportProgress,
+  };
+
   const expectedSize = await getRemoteApkSize(apkUrl);
   const attempts: string[] = [];
   let lastError: unknown = null;
@@ -411,7 +459,6 @@ export async function downloadAndInstallUpdate(
   ): Promise<string | null> => {
     attempts.push(label);
     try {
-      handlers?.onProgress?.(0);
       return await download();
     } catch (error) {
       lastError = error;
@@ -420,13 +467,13 @@ export async function downloadAndInstallUpdate(
   };
 
   downloadedPath = await tryDownload('direct-fetch', () =>
-    downloadWithDirectFetch(apkUrl, expectedSize, handlers),
+    downloadWithDirectFetch(apkUrl, expectedSize, progressHandlers),
   );
 
   if (!downloadedPath) {
     handlers?.onStatus?.('Trying system downloader…');
     downloadedPath = await tryDownload('download-manager', () =>
-      downloadWithManager(apkUrl, expectedSize, handlers),
+      downloadWithManager(apkUrl, expectedSize, progressHandlers),
     );
   }
 
@@ -441,7 +488,7 @@ export async function downloadAndInstallUpdate(
   }
 
   handlers?.onPhase?.('verifying');
-  handlers?.onProgress?.(1);
+  reportProgress(1);
   handlers?.onStatus?.('Verifying download…');
 
   const stat = await statApk(downloadedPath);

@@ -4,7 +4,6 @@ import {
   PressableProps,
   StyleSheet,
   Text,
-  TextProps,
   View,
   ViewStyle,
 } from 'react-native';
@@ -87,11 +86,7 @@ export function Button({
   );
 }
 
-export function AppText({ style, ...props }: TextProps) {
-  const { colors, isDark } = useTheme();
-  const styles = createStyles(colors, isDark);
-  return <Text style={[styles.text, style]} {...props} />;
-}
+export { AppText } from '@/components/ui/AppText';
 
 function createStyles(colors: ThemeColors, isDark: boolean) {
   return StyleSheet.create({
@@ -159,10 +154,6 @@ function createStyles(colors: ThemeColors, isDark: boolean) {
     },
     ghostLabel: {
       color: isDark ? colors.accent : colors.textPrimary,
-    },
-    text: {
-      ...typography.body,
-      color: colors.textPrimary,
     },
   });
 }

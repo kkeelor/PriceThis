@@ -40,14 +40,25 @@ export function useFavorites() {
     [currencyCode, rates],
   );
 
-  const categoryTotals: FavoriteCategoryTotal[] = groups.map(group => ({
-    category: group.category,
-    count: group.scans.length,
-    totalValue: group.scans.reduce((sum, scan) => sum + convertValue(scan), 0),
-  }));
+  const categoryTotals: FavoriteCategoryTotal[] = useMemo(
+    () =>
+      groups.map(group => ({
+        category: group.category,
+        count: group.scans.length,
+        totalValue: group.scans.reduce((sum, scan) => sum + convertValue(scan), 0),
+      })),
+    [groups, convertValue],
+  );
 
-  const portfolioTotal = categoryTotals.reduce((sum, item) => sum + item.totalValue, 0);
-  const favoriteCount = groups.reduce((sum, group) => sum + group.scans.length, 0);
+  const portfolioTotal = useMemo(
+    () => categoryTotals.reduce((sum, item) => sum + item.totalValue, 0),
+    [categoryTotals],
+  );
+
+  const favoriteCount = useMemo(
+    () => groups.reduce((sum, group) => sum + group.scans.length, 0),
+    [groups],
+  );
 
   const favoriteScanIds = useMemo(
     () => new Set(groups.flatMap(group => group.scans.map(scan => scan.id))),

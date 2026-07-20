@@ -5,8 +5,6 @@ export type ThemeColors = {
   surface: string;
   surfaceElevated: string;
   border: string;
-  /** @deprecated Prefer borderAccent — kept as alias during migration */
-  borderGold: string;
   borderAccent: string;
   textPrimary: string;
   textSecondary: string;

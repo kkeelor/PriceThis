@@ -1,5 +1,6 @@
 import { useCallback, useEffect, useRef, useState } from 'react';
 import {
+  Alert,
   Pressable,
   ScrollView,
   StyleSheet,
@@ -94,8 +95,11 @@ export function ResultScreen({ navigation, route }: ResultScreenProps) {
   const handleShare = useCallback(async () => {
     try {
       await captureAndShareResultCard(shareCardRef.current, initialResult, formattedValue);
-    } catch {
-      // user dismissed share sheet
+    } catch (error) {
+      const message = error instanceof Error ? error.message : '';
+      if (message && !message.toLowerCase().includes('cancel') && !message.toLowerCase().includes('dismiss')) {
+        Alert.alert('Could not share', 'Something went wrong. Try again.');
+      }
     }
   }, [formattedValue, initialResult]);
 
@@ -160,6 +164,7 @@ export function ResultScreen({ navigation, route }: ResultScreenProps) {
               accessibilityRole="button"
               accessibilityLabel={saved ? 'Remove from favorites' : 'Add to favorites'}
               onPress={handleHeartPress}
+              accessibilityHint="Long press to change category"
               onLongPress={() => setCategoryPickerOpen(true)}
               style={styles.heartButton}>
               <Heart
@@ -172,7 +177,7 @@ export function ResultScreen({ navigation, route }: ResultScreenProps) {
             <Button
               label="Share"
               variant="ghost"
-              onPress={() => handleShare()}
+              onPress={handleShare}
               style={styles.chromeButton}
             />
           </View>

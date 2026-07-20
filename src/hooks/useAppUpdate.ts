@@ -97,7 +97,7 @@ export function useAppUpdate() {
     try {
       await downloadAndInstallUpdate(check.manifest.apkUrl, {
         onProgress: value => {
-          setProgress(value);
+          setProgress(prev => Math.max(prev, Math.min(value, 1)));
         },
         onPhase: phase => {
           setStatus(phase);
@@ -106,7 +106,7 @@ export function useAppUpdate() {
           setStatusDetail(detail);
         },
       });
-      setStatusDetail('Download complete');
+      setStatusDetail(null);
       setStatus('idle');
     } catch (error) {
       setStatus('idle');

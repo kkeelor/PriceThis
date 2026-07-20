@@ -23,7 +23,6 @@ export function AppUpdateSection({ active }: AppUpdateSectionProps) {
     supported,
     errorMessage,
     errorDetails,
-    statusDetail,
     refreshCheck,
     downloadUpdate,
   } = useAppUpdate();
@@ -59,13 +58,11 @@ export function AppUpdateSection({ active }: AppUpdateSectionProps) {
   const buttonLabel = isChecking
     ? 'Checking…'
     : isDownloading
-      ? statusDetail && progress === 0
-        ? statusDetail
-        : `Downloading… ${Math.round(progress * 100)}%`
+      ? `Downloading… ${Math.round(progress * 100)}%`
       : isVerifying
-        ? statusDetail ?? 'Verifying download…'
+        ? 'Verifying download…'
         : isInstalling
-          ? statusDetail ?? 'Opening installer…'
+          ? 'Opening installer…'
           : updateAvailable
             ? 'Update available'
             : 'Check for updates';
@@ -107,12 +104,6 @@ export function AppUpdateSection({ active }: AppUpdateSectionProps) {
               ]}
             />
           </View>
-        ) : null}
-
-        {statusDetail && isBusy ? (
-          <AppText style={styles.debugText} selectable>
-            {statusDetail}
-          </AppText>
         ) : null}
 
         {errorMessage ? (
@@ -162,7 +153,7 @@ function createStyles(colors: ThemeColors, isDark: boolean) {
       color: colors.textSecondary,
     },
     checkButton: {
-      minHeight: 48,
+      minHeight: 52,
       borderRadius: radii.md,
       borderWidth: 1,
       borderColor: colors.border,
@@ -199,7 +190,7 @@ function createStyles(colors: ThemeColors, isDark: boolean) {
     },
     badgeText: {
       ...typography.caption,
-      color: '#FFFFFF',
+      color: colors.textOnAccent,
       fontSize: 11,
       lineHeight: 13,
       fontWeight: '700',

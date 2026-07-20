@@ -1,4 +1,5 @@
 import { Modal, Pressable, StyleSheet, View } from 'react-native';
+import { Trash2 } from 'lucide-react-native';
 
 import { AppText, Button } from '@/components/ui/Button';
 import { useTheme } from '@/context/ThemeContext';
@@ -38,11 +39,16 @@ export function ConfirmDialog({
       animationType="fade"
       onRequestClose={onCancel}>
       <View style={[styles.backdrop, { padding: horizontalGutter }]}>
-        <Pressable style={StyleSheet.absoluteFill} onPress={onCancel} />
+        <Pressable
+          accessibilityLabel="Dismiss"
+          accessibilityRole="button"
+          style={StyleSheet.absoluteFill}
+          onPress={onCancel}
+        />
         <View style={styles.card}>
           {destructive ? (
             <View style={styles.iconWrap}>
-              <AppText style={styles.icon}>🗑</AppText>
+              <Trash2 color={colors.danger} size={22} strokeWidth={2} />
             </View>
           ) : null}
 
@@ -115,10 +121,6 @@ function createStyles(colors: ThemeColors, isDark: boolean, isCompact: boolean) 
       alignItems: 'center',
       justifyContent: 'center',
     },
-    icon: {
-      fontSize: 22,
-      lineHeight: 26,
-    },
     title: {
       ...(isCompact ? typography.headline : typography.title),
       color: colors.textPrimary,
@@ -148,7 +150,7 @@ function createStyles(colors: ThemeColors, isDark: boolean, isCompact: boolean) 
     },
     destructiveLabel: {
       ...typography.bodyStrong,
-      color: '#FFFFFF',
+      color: colors.textOnAccent,
       textAlign: 'center',
       maxWidth: '100%',
     },

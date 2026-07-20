@@ -1,6 +1,6 @@
 {
-  "versionCode": 29,
-  "versionName": "0.0.29",
+  "versionCode": 30,
+  "versionName": "0.0.30",
   "apkUrl": "https://price-this.vercel.app/releases/app-release.apk",
-  "releaseNotes": "Test build v0.0.29"
+  "releaseNotes": "Test build v0.0.30"
 }

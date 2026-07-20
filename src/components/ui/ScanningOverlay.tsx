@@ -18,6 +18,7 @@ import type { ThemeColors } from '@/theme/types';
 type ScanningOverlayProps = {
   visible: boolean;
   message?: string;
+  subtitle?: string;
 };
 
 const RING_SIZE = 72;
@@ -26,6 +27,7 @@ const CORE_SIZE = 16;
 export function ScanningOverlay({
   visible,
   message = 'Analyzing…',
+  subtitle = 'Finding value and surprises…',
 }: ScanningOverlayProps) {
   const { colors } = useTheme();
   const styles = createStyles(colors);
@@ -77,7 +79,7 @@ export function ScanningOverlay({
             </View>
           </View>
           <AppText style={styles.message}>{message}</AppText>
-          <AppText style={styles.subtitle}>Finding value and surprises…</AppText>
+          <AppText style={styles.subtitle}>{subtitle}</AppText>
         </View>
       </View>
     </Modal>

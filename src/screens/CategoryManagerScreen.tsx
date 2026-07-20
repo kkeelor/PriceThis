@@ -103,6 +103,7 @@ export function CategoryManagerScreen({ navigation }: CategoryManagerScreenProps
           <GlassCard style={styles.addCard}>
             <AppText style={styles.sectionLabel}>New category</AppText>
             <TextInput
+              accessibilityLabel="New category name"
               value={newCategoryName}
               onChangeText={setNewCategoryName}
               placeholder="e.g. Watches, Furniture"
@@ -131,6 +132,7 @@ export function CategoryManagerScreen({ navigation }: CategoryManagerScreenProps
                     {isEditing ? (
                       <>
                         <TextInput
+                          accessibilityLabel="Rename category"
                           value={editingName}
                           onChangeText={setEditingName}
                           autoFocus

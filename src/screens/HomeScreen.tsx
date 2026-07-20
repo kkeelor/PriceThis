@@ -86,6 +86,14 @@ export function HomeScreen({ navigation }: HomeScreenProps) {
       return;
     }
 
+    if (picked.errorCode) {
+      Alert.alert(
+        'Could not open gallery',
+        picked.errorMessage ?? 'Check your photo library permissions in settings.',
+      );
+      return;
+    }
+
     const asset = picked.assets?.[0];
     if (!asset?.base64) {
       Alert.alert('Could not read image', 'Try another photo from your gallery.');
@@ -192,7 +200,7 @@ export function HomeScreen({ navigation }: HomeScreenProps) {
                     variant="secondary"
                     fullWidth
                     disabled={isScanning}
-                    onPress={() => handleGalleryUpload()}
+                    onPress={handleGalleryUpload}
                   />
                 </GlassCard>
               </Pressable>

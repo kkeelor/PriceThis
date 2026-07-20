@@ -4,9 +4,11 @@ import {
   Alert,
   LayoutChangeEvent,
   Linking,
+  Pressable,
   StyleSheet,
   View,
 } from 'react-native';
+import { Info } from 'lucide-react-native';
 import {
   Camera,
   CommonResolutions,
@@ -24,7 +26,7 @@ import { useTheme } from '@/context/ThemeContext';
 import { useResponsiveLayout } from '@/hooks/useResponsiveLayout';
 import { useScan } from '@/hooks/useScan';
 import type { CameraScreenProps } from '@/navigation/types';
-import { spacing, typography } from '@/theme';
+import { radii, spacing, typography } from '@/theme';
 import type { ThemeColors } from '@/theme/types';
 import { arrayBufferToBase64 } from '@/utils/base64';
 import { resolveDefaultZoom } from '@/utils/cameraZoom';
@@ -44,7 +46,7 @@ function waitForNextFrame(): Promise<void> {
 
 export function CameraScreen({ navigation }: CameraScreenProps) {
   const { colors } = useTheme();
-  const { insets, isShort, isCompact, horizontalGutter } = useResponsiveLayout();
+  const { insets, isCompact, horizontalGutter } = useResponsiveLayout();
   const styles = createStyles(colors);
   const cameraRef = useRef<CameraRef>(null);
   const isCapturingRef = useRef(false);
@@ -58,6 +60,7 @@ export function CameraScreen({ navigation }: CameraScreenProps) {
   const [isReady, setIsReady] = useState(false);
   const [cameraLookupTimedOut, setCameraLookupTimedOut] = useState(false);
   const [previewLayout, setPreviewLayout] = useState<PreviewLayout | null>(null);
+  const [tipsVisible, setTipsVisible] = useState(false);
   const { isScanning, runImageScan } = useScan({
     onSuccess: result => {
       navigation.replace('Result', { result });
@@ -237,21 +240,34 @@ export function CameraScreen({ navigation }: CameraScreenProps) {
             onPress={handleClose}
             style={styles.chromeButton}
           />
+          {isReady ? (
+            <Pressable
+              accessibilityRole="button"
+              accessibilityLabel="Photo tips"
+              onPress={() => setTipsVisible(v => !v)}
+              style={styles.infoButton}>
+              <Info size={20} color="rgba(244, 246, 251, 0.85)" strokeWidth={2} />
+            </Pressable>
+          ) : null}
         </View>
 
+        {tipsVisible ? (
+          <Pressable style={styles.tipsOverlay} onPress={() => setTipsVisible(false)}>
+            <View style={styles.tipsCard}>
+              <AppText style={styles.tipsTitle}>Tips for better results</AppText>
+              <AppText style={styles.tipLine}>Use good, even lighting</AppText>
+              <AppText style={styles.tipLine}>Include the brand name if visible</AppText>
+              <AppText style={styles.tipLine}>Avoid glare and reflections</AppText>
+            </View>
+          </Pressable>
+        ) : null}
+
         <View style={[styles.bottomBar, { paddingBottom: bottomPad }]}>
-          {!isShort ? (
-            <AppText style={styles.hint} numberOfLines={2}>
-              {isReady
-                ? 'Good light · include the brand if you see it'
-                : 'Opening camera…'}
-            </AppText>
-          ) : null}
           <Button
             label={isScanning ? 'Scanning…' : 'Tap to Scan'}
             disabled={!isReady || isScanning}
             fullWidth
-            onPress={() => handleScan()}
+            onPress={handleScan}
           />
           <Button
             label="Search instead"
@@ -269,7 +285,7 @@ function createStyles(colors: ThemeColors) {
   return StyleSheet.create({
     container: {
       flex: 1,
-      backgroundColor: '#000000',
+      backgroundColor: colors.shadow,
     },
     preview: {
       position: 'absolute',
@@ -281,22 +297,50 @@ function createStyles(colors: ThemeColors) {
       justifyContent: 'space-between',
     },
     topBar: {
+      flexDirection: 'row',
+      justifyContent: 'space-between',
       alignItems: 'flex-start',
+    },
+    infoButton: {
+      width: 40,
+      height: 40,
+      borderRadius: 20,
+      backgroundColor: 'rgba(0, 0, 0, 0.4)',
+      alignItems: 'center',
+      justifyContent: 'center',
+    },
+    tipsOverlay: {
+      ...StyleSheet.absoluteFill,
+      zIndex: 10,
+      backgroundColor: 'rgba(0, 0, 0, 0.55)',
+      alignItems: 'center',
+      justifyContent: 'center',
+      padding: spacing.lg,
+    },
+    tipsCard: {
+      backgroundColor: colors.surfaceElevated,
+      borderRadius: radii.xl,
+      padding: spacing.lg,
+      gap: spacing.sm,
+      maxWidth: 300,
+      width: '100%',
+      borderWidth: 1,
+      borderColor: colors.border,
+    },
+    tipsTitle: {
+      ...typography.bodyStrong,
+      color: colors.textPrimary,
+      textAlign: 'center',
+      marginBottom: spacing.xs,
+    },
+    tipLine: {
+      ...typography.body,
+      color: colors.textSecondary,
+      textAlign: 'center',
     },
     bottomBar: {
       gap: spacing.sm,
       alignItems: 'stretch',
-    },
-    hint: {
-      ...typography.caption,
-      color: '#F4F6FB',
-      textAlign: 'center',
-      backgroundColor: 'rgba(0, 0, 0, 0.55)',
-      paddingHorizontal: spacing.md,
-      paddingVertical: spacing.sm,
-      borderRadius: 14,
-      alignSelf: 'center',
-      maxWidth: '100%',
     },
     chromeButton: {
       minHeight: 44,

@@ -68,6 +68,9 @@ export function SettingsMenu() {
                     return (
                       <Pressable
                         key={option}
+                        accessibilityRole="button"
+                        accessibilityLabel={`${option === 'light' ? 'Light' : 'Dark'} theme`}
+                        accessibilityState={{ selected }}
                         onPress={() => setMode(option)}
                         style={[styles.themeOption, selected && styles.themeOptionSelected]}>
                         <ThemeModeIcon
