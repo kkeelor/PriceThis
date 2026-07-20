@@ -1,9 +1,8 @@
-import { useCallback, useState } from 'react';
+import { useCallback, useRef, useState } from 'react';
 
 import {
   checkForAppUpdate,
   downloadAndInstallUpdate,
-  getUpdateFeedUrls,
   isAndroidUpdateSupported,
   UpdateDownloadError,
   type UpdateDownloadPhase,
@@ -17,6 +16,8 @@ import type { AppUpdateCheck } from '@/types/appUpdate';
 import { getErrorMessage } from '@/utils/errorMessage';
 
 type UpdateStatus = 'idle' | 'checking' | UpdateDownloadPhase;
+
+const PROGRESS_RENDER_THRESHOLD = 0.01;
 
 function formatUpdateError(error: unknown): { message: string; details: string } {
   if (error instanceof UpdateDownloadError) {
@@ -46,7 +47,7 @@ export function useAppUpdate() {
   const [progress, setProgress] = useState(0);
   const [errorMessage, setErrorMessage] = useState<string | null>(null);
   const [errorDetails, setErrorDetails] = useState<string | null>(null);
-  const [statusDetail, setStatusDetail] = useState<string | null>(null);
+  const lastRenderedProgress = useRef(0);
 
   const refreshCheck = useCallback(async () => {
     if (!isAndroidUpdateSupported()) {
@@ -61,13 +62,11 @@ export function useAppUpdate() {
     try {
       const result = await checkForAppUpdate();
       setCheck(result);
-      setStatusDetail(null);
     } catch (error) {
       setCheck(null);
       const formatted = formatUpdateError(error);
       setErrorMessage(formatted.message);
       setErrorDetails(formatted.details);
-      setStatusDetail(`feed=error\ntried:\n${getUpdateFeedUrls().join('\n')}`);
     } finally {
       setStatus('idle');
     }
@@ -80,9 +79,9 @@ export function useAppUpdate() {
 
     setStatus('downloading');
     setProgress(0);
+    lastRenderedProgress.current = 0;
     setErrorMessage(null);
     setErrorDetails(null);
-    setStatusDetail('Connecting…');
 
     const hasInstallPermission = await ensureInstallPermission();
     if (!hasInstallPermission) {
@@ -90,23 +89,22 @@ export function useAppUpdate() {
       const formatted = formatUpdateError(new InstallPermissionError());
       setErrorMessage(formatted.message);
       setErrorDetails(formatted.details);
-      setStatusDetail('installPermission=opened-settings');
       return;
     }
 
     try {
       await downloadAndInstallUpdate(check.manifest.apkUrl, {
         onProgress: value => {
-          setProgress(prev => Math.max(prev, Math.min(value, 1)));
+          const clamped = Math.min(value, 1);
+          if (clamped - lastRenderedProgress.current >= PROGRESS_RENDER_THRESHOLD || clamped >= 1) {
+            lastRenderedProgress.current = clamped;
+            setProgress(clamped);
+          }
         },
         onPhase: phase => {
           setStatus(phase);
         },
-        onStatus: detail => {
-          setStatusDetail(detail);
-        },
       });
-      setStatusDetail(null);
       setStatus('idle');
     } catch (error) {
       setStatus('idle');
@@ -114,13 +112,6 @@ export function useAppUpdate() {
       const formatted = formatUpdateError(error);
       setErrorMessage(formatted.message);
       setErrorDetails(formatted.details);
-      setStatusDetail(
-        [
-          'download=failed',
-          `apk=${check.manifest.apkUrl}`,
-          formatted.details,
-        ].join('\n'),
-      );
     }
   }, [check]);
 
@@ -134,7 +125,6 @@ export function useAppUpdate() {
     supported: isAndroidUpdateSupported(),
     errorMessage,
     errorDetails,
-    statusDetail,
     refreshCheck,
     downloadUpdate,
   };

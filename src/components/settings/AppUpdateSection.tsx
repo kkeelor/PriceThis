@@ -1,5 +1,10 @@
 import { useEffect } from 'react';
 import { Pressable, StyleSheet, View } from 'react-native';
+import Animated, {
+  useAnimatedStyle,
+  useSharedValue,
+  withTiming,
+} from 'react-native-reanimated';
 
 import { AppText } from '@/components/ui/Button';
 import { useTheme } from '@/context/ThemeContext';
@@ -29,21 +34,32 @@ export function AppUpdateSection({ active }: AppUpdateSectionProps) {
 
   const versionName = check?.currentVersionName ?? getInstalledVersionName();
 
+  const isChecking = status === 'checking';
+  const isDownloading = status === 'downloading';
+  const isVerifying = status === 'verifying';
+  const isInstalling = status === 'installing';
+  const isBusy = isChecking || isDownloading || isVerifying || isInstalling;
+
+  const barWidth = useSharedValue(0);
+
   useEffect(() => {
     if (active) {
       refreshCheck();
     }
   }, [active, refreshCheck]);
 
+  useEffect(() => {
+    const target = isVerifying ? 100 : Math.round(progress * 100);
+    barWidth.value = withTiming(target, { duration: 300 });
+  }, [barWidth, isVerifying, progress]);
+
+  const barStyle = useAnimatedStyle(() => ({
+    width: `${barWidth.value}%`,
+  }));
+
   if (!supported) {
     return null;
   }
-
-  const isChecking = status === 'checking';
-  const isDownloading = status === 'downloading';
-  const isVerifying = status === 'verifying';
-  const isInstalling = status === 'installing';
-  const isBusy = isChecking || isDownloading || isVerifying || isInstalling;
 
   const handlePress = () => {
     if (updateAvailable && !isBusy) {
@@ -97,12 +113,7 @@ export function AppUpdateSection({ active }: AppUpdateSectionProps) {
 
         {isDownloading || isVerifying ? (
           <View style={styles.progressTrack}>
-            <View
-              style={[
-                styles.progressFill,
-                { width: `${isVerifying ? 100 : Math.round(progress * 100)}%` },
-              ]}
-            />
+            <Animated.View style={[styles.progressFill, barStyle]} />
           </View>
         ) : null}
 

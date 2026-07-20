@@ -21,7 +21,7 @@ const MIN_COMPLETE_APK_BYTES = 35 * 1024 * 1024;
 const APK_FILE_NAME = 'pricethis-update.apk';
 const DOWNLOAD_TIMEOUT_MS = 10 * 60 * 1000;
 const STALL_TIMEOUT_MS = 45 * 1000;
-const PROGRESS_POLL_MS = 500;
+const PROGRESS_POLL_MS = 1000;
 const MIN_BYTES_TO_CLEAR_STALL = 1024 * 64;
 
 export type UpdateDownloadPhase = 'downloading' | 'verifying' | 'installing';
@@ -29,7 +29,6 @@ export type UpdateDownloadPhase = 'downloading' | 'verifying' | 'installing';
 export type UpdateDownloadHandlers = {
   onProgress?: (progress: number) => void;
   onPhase?: (phase: UpdateDownloadPhase) => void;
-  onStatus?: (status: string) => void;
 };
 
 type BlobFetchResult = {
@@ -261,7 +260,7 @@ function startFileProgressPolling(
 async function waitForTaskWithStallGuard(
   task: BlobFetchTask,
   path: string,
-  handlers?: UpdateDownloadHandlers,
+  _handlers?: UpdateDownloadHandlers,
 ): Promise<BlobFetchResult> {
   const startedAt = Date.now();
 
@@ -281,7 +280,6 @@ async function waitForTaskWithStallGuard(
     try {
       const stat = await statApk(path);
       if (stat.size >= MIN_BYTES_TO_CLEAR_STALL) {
-        handlers?.onStatus?.('Downloading…');
         return await task;
       }
     } catch {
@@ -310,7 +308,7 @@ async function runBlobDownload(
   handlers: UpdateDownloadHandlers | undefined,
   createTask: () => BlobFetchTask,
 ): Promise<string> {
-  handlers?.onStatus?.(`Starting ${label}…`);
+  // No status text — progress bar is the only feedback.
   await ReactNativeBlobUtil.fs.unlink(path).catch(() => undefined);
 
   const task = createTask();
@@ -440,7 +438,6 @@ export async function downloadAndInstallUpdate(
   }
 
   handlers?.onPhase?.('downloading');
-  handlers?.onStatus?.('Preparing download…');
 
   const reportProgress = createMonotonicProgressReporter(handlers?.onProgress);
   const progressHandlers: UpdateDownloadHandlers = {
@@ -471,7 +468,6 @@ export async function downloadAndInstallUpdate(
   );
 
   if (!downloadedPath) {
-    handlers?.onStatus?.('Trying system downloader…');
     downloadedPath = await tryDownload('download-manager', () =>
       downloadWithManager(apkUrl, expectedSize, progressHandlers),
     );
@@ -489,7 +485,6 @@ export async function downloadAndInstallUpdate(
 
   handlers?.onPhase?.('verifying');
   reportProgress(1);
-  handlers?.onStatus?.('Verifying download…');
 
   const stat = await statApk(downloadedPath);
 
@@ -507,7 +502,6 @@ export async function downloadAndInstallUpdate(
   }
 
   handlers?.onPhase?.('installing');
-  handlers?.onStatus?.('Opening installer…');
 
   try {
     if (isApkInstallerAvailable()) {
